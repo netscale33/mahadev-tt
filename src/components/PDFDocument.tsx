@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   coverImageContainer: {
     position: "relative",
     width: "100%",
-    height: 360,             // Enlarged cover image (Flamingo Style)
+    height: 300,             // Enlarged cover image (Flamingo Style)
     marginBottom: 12,
     borderRadius: 8,
     borderWidth: 2,
@@ -923,7 +923,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         </View>
 
         {/* Large Cover Photo */}
-        <View style={{ ...styles.coverImageContainer, height: 360, marginBottom: 15 }}>
+        <View style={{ ...styles.coverImageContainer, height: 300, marginBottom: 15 }}>
           <Image src={data.coverImage || getAssetUrl("/goa.png")} style={styles.coverImage} />
           <View style={styles.coverTitleOverlay}>
             <Text style={{ fontSize: 9.5, color: "#cbd5e1", letterSpacing: 0.5, marginBottom: 2 }}>Here is your package for</Text>
@@ -936,19 +936,35 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
         </View>
 
-        {/* Horizontal Modern Quotation Details Row */}
-        <View style={{ marginTop: 10, display: "flex", flexDirection: "row", justifyContent: "space-between", borderTopWidth: 1, borderTopColor: "#cbd5e1", paddingTop: 10 }}>
-          <View style={{ display: "flex", flexDirection: "column" }}>
-            <Text style={{ fontSize: 8, color: colors.textMuted, fontWeight: "bold", textTransform: "uppercase" }}>PREPARED FOR</Text>
-            <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary, marginTop: 2 }}>{data.guestName}</Text>
-          </View>
-          <View style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <Text style={{ fontSize: 8, color: colors.textMuted, fontWeight: "bold", textTransform: "uppercase" }}>TRAVEL DATE</Text>
-            <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary, marginTop: 2 }}>{formattedArrival}</Text>
-          </View>
-          <View style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            <Text style={{ fontSize: 8, color: colors.textMuted, fontWeight: "bold", textTransform: "uppercase" }}>TOTAL TOURISTS</Text>
-            <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary, marginTop: 2 }}>{data.numPax}</Text>
+        {/* Trip Summary Box */}
+        <View style={{ borderWidth: 2, borderColor: colors.accent, borderRadius: 8, padding: 15, backgroundColor: colors.accentLight, marginTop: 10 }}>
+          <Text style={{ fontSize: 11, fontWeight: "bold", color: colors.primary, marginBottom: 8, borderBottomWidth: 1.5, borderBottomColor: colors.accent, paddingBottom: 4 }}>
+            QUOTATION DETAILS
+          </Text>
+          
+          <View style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>PREPARED FOR :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{data.guestName}</Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>DURATION :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
+                {(data.durationNights ?? 0).toString().padStart(2, "0")} Nights / {(data.durationDays ?? 0).toString().padStart(2, "0")} Days
+              </Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>TRAVEL DATE :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{formattedArrival}</Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>TOTAL TRAVELERS :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{data.numPax}</Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>ACCOMMODATION :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{data.numRooms}</Text>
+            </View>
           </View>
         </View>
 

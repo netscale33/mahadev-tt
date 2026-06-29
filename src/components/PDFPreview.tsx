@@ -923,7 +923,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         </div>
 
         {/* Large Cover Photo Container */}
-        <div className="cover-photo-wrapper" style={{ height: "330px", marginBottom: "15px" }}>
+        <div className="cover-photo-wrapper" style={{ height: "300px", marginBottom: "15px" }}>
           <img src={data.coverImage || "/goa.png"} alt="Destination Cover" className="cover-photo" style={{ height: "100%" }} />
           <div className="cover-overlay" style={{
             position: "absolute",
@@ -947,19 +947,44 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
         </div>
 
-        {/* Horizontal Modern Quotation Details Row */}
-        <div style={{ marginTop: "15px", display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: "10px", width: "100%" }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>PREPARED FOR</span>
-            <span style={{ fontSize: "0.82rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>{data.guestName || ""}</span>
+        {/* Quotation Details Summary Box */}
+        <div style={{
+          border: "2px solid #c5a059",
+          borderRadius: "8px",
+          padding: "15px",
+          backgroundColor: "#faf6eb",
+          marginTop: "10px",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px"
+        }}>
+          <div style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#0a2540", borderBottom: "1.5px solid #c5a059", paddingBottom: "4px", textTransform: "uppercase" }}>
+            Quotation Details
           </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>TRAVEL DATE</span>
-            <span style={{ fontSize: "0.82rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>{formattedArrival}</span>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
-            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>TOTAL TOURISTS</span>
-            <span style={{ fontSize: "0.82rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>{data.numPax || ""}</span>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>PREPARED FOR :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.guestName || ""}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>DURATION :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>
+                {(data.durationNights ?? 0).toString().padStart(2, "0")} Nights / {(data.durationDays ?? 0).toString().padStart(2, "0")} Days
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>TRAVEL DATE :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{formattedArrival}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>TOTAL TRAVELERS :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.numPax || ""}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>ACCOMMODATION :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.numRooms || ""}</span>
+            </div>
           </div>
         </div>
 
