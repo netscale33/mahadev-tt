@@ -923,68 +923,43 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         </div>
 
         {/* Large Cover Photo Container */}
-        <div className="cover-photo-wrapper" style={{ height: "300px", marginBottom: "20px" }}>
+        <div className="cover-photo-wrapper" style={{ height: "330px", marginBottom: "15px" }}>
           <img src={data.coverImage || "/goa.png"} alt="Destination Cover" className="cover-photo" style={{ height: "100%" }} />
           <div className="cover-overlay" style={{
             position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            backgroundColor: "rgba(10, 37, 64, 0.85)",
-            border: "2px solid #c5a059",
-            borderRadius: "8px",
-            padding: "15px 25px",
+            bottom: "0",
+            left: "0",
+            right: "0",
+            backgroundColor: "#0a2540",
+            borderTop: "3px solid #c5a059",
+            padding: "16px 20px",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            width: "80%",
-            textAlign: "center"
+            width: "100%",
+            boxSizing: "border-box",
+            textAlign: "left"
           }}>
-            <span style={{ fontSize: "0.62rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "1.5px", textTransform: "uppercase" }}>EXQUISITE GETAWAY TO</span>
-            <h2 style={{ fontSize: "2rem", fontWeight: "bold", color: "#ffffff", letterSpacing: "2px", margin: "4px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
-            <span style={{ fontSize: "0.55rem", color: "#ffffff", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase" }}>PREMIUM TOUR PACKAGE</span>
+            <span style={{ fontSize: "0.65rem", color: "#cbd5e1", letterSpacing: "0.5px" }}>Here is your package for</span>
+            <h2 style={{ fontSize: "1.6rem", fontWeight: "bold", color: "#ffffff", letterSpacing: "1px", margin: "3px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
+            <span style={{ fontSize: "0.75rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "0.5px" }}>{(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package</span>
           </div>
         </div>
 
-        {/* Quotation Details Summary Box */}
-        <div style={{
-          border: "2px solid #c5a059",
-          borderRadius: "8px",
-          padding: "15px",
-          backgroundColor: "#faf6eb",
-          marginTop: "10px",
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          gap: "8px"
-        }}>
-          <div style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#0a2540", borderBottom: "1.5px solid #c5a059", paddingBottom: "4px", textTransform: "uppercase" }}>
-            Quotation Details
+        {/* Horizontal Modern Quotation Details Row */}
+        <div style={{ marginTop: "15px", display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: "10px", width: "100%" }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>PREPARED FOR</span>
+            <span style={{ fontSize: "0.82rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>{data.guestName || ""}</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
-              <span style={{ color: "#64748b", fontWeight: "bold" }}>PREPARED FOR :</span>
-              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.guestName || ""}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
-              <span style={{ color: "#64748b", fontWeight: "bold" }}>DURATION :</span>
-              <span style={{ fontWeight: "bold", color: "#0a2540" }}>
-                {(data.durationNights ?? 0).toString().padStart(2, "0")} Nights / {(data.durationDays ?? 0).toString().padStart(2, "0")} Days
-              </span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
-              <span style={{ color: "#64748b", fontWeight: "bold" }}>TRAVEL DATE :</span>
-              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{formattedArrival}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
-              <span style={{ color: "#64748b", fontWeight: "bold" }}>TOTAL TRAVELERS :</span>
-              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.numPax || ""}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
-              <span style={{ color: "#64748b", fontWeight: "bold" }}>ACCOMMODATION :</span>
-              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.numRooms || ""}</span>
-            </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>TRAVEL DATE</span>
+            <span style={{ fontSize: "0.82rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>{formattedArrival}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={{ fontSize: "0.62rem", color: "#64748b", fontWeight: "bold", textTransform: "uppercase" }}>TOTAL TOURISTS</span>
+            <span style={{ fontSize: "0.82rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>{data.numPax || ""}</span>
           </div>
         </div>
 
@@ -1485,8 +1460,8 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </span>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center", marginTop: "1.5rem", marginBottom: "1rem" }}>
-          <img src="/logo.jpg" alt="Mahadev Holidays Large Logo" style={{ height: "60px", width: "auto", opacity: 0.9 }} />
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "10px", marginBottom: "5px" }}>
+          <img src="/logo.jpg" alt="Mahadev Holidays Large Logo" style={{ height: "50px", width: "auto", opacity: 0.9 }} />
         </div>
 
         <div className="pdf-footer">
