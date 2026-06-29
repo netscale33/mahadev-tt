@@ -1108,12 +1108,18 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
 
         {/* Pricing Panel - Placed FIRST on Page 2 */}
         <View style={styles.priceContainer}>
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabel}>TOTAL PACKAGE PRICE :</Text>
-            <Text style={styles.priceTotal}>
-              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
-              {data.gstExtra && " (GST 5% EXTRA)"}
+          <View style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginBottom: 6 }}>
+            <Text style={{ fontSize: 9.5, fontWeight: "bold", letterSpacing: 1, textTransform: "uppercase", color: colors.textMuted, marginBottom: 3 }}>
+              TOTAL PACKAGE PRICE
             </Text>
+            <Text style={[styles.priceTotal, { textAlign: "center" }]}>
+              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
+            </Text>
+            {data.gstExtra && (
+              <Text style={{ fontSize: 8.5, fontWeight: "bold", color: colors.accent, marginTop: 2, letterSpacing: 0.5 }}>
+                (GST 5% EXTRA APPLICABLE)
+              </Text>
+            )}
           </View>
           
           {data.pricePerPerson && (

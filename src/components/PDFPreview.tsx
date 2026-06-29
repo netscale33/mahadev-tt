@@ -1101,12 +1101,18 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
 
         {/* Pricing Summary Card */}
         <div className="price-card-box" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px 24px", border: "4px solid #c5a059", borderRadius: "12px", backgroundColor: "#faf6eb", marginBottom: "20px" }}>
-          <div className="price-row-item" style={{ borderBottom: "1px dashed #c5a059", paddingBottom: "6px" }}>
-            <span className="price-label-text" style={{ fontSize: "1.2rem", fontWeight: "bold" }}>TOTAL PACKAGE PRICE :</span>
-            <span className="price-total-text" style={{ fontSize: "1.85rem", fontWeight: "bold", color: "#0a2540" }}>
-              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
-              {data.gstExtra && <span style={{ fontSize: "0.85rem", color: "#c5a059", marginLeft: "6px" }}>(GST 5% EXTRA)</span>}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", borderBottom: "1px dashed #c5a059", paddingBottom: "10px", marginBottom: "4px" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", color: "#64748b", marginBottom: "4px" }}>
+              TOTAL PACKAGE PRICE
             </span>
+            <span style={{ fontSize: "2rem", fontWeight: "bold", color: "#0a2540", textAlign: "center", lineHeight: 1.1 }}>
+              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
+            </span>
+            {data.gstExtra && (
+              <span style={{ fontSize: "0.72rem", color: "#c5a059", fontWeight: "bold", marginTop: "4px", letterSpacing: "0.5px" }}>
+                (GST 5% EXTRA APPLICABLE)
+              </span>
+            )}
           </div>
 
           {data.pricePerPerson && (
