@@ -148,25 +148,34 @@ const styles = StyleSheet.create({
   },
   coverTitleOverlay: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "rgba(10, 37, 64, 0.9)", // Darker semi-transparent overlay
+    top: "33%",
+    bottom: "33%",
+    left: "10%",
+    right: "10%",
+    backgroundColor: "rgba(10, 37, 64, 0.85)", // Premium dark translucent blue
+    borderWidth: 2.5,
+    borderColor: colors.accent,
+    borderRadius: 8,
     padding: "12 20",
     display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: "column",
     alignItems: "center",
+    justifyContent: "center",
   },
   coverTitle: {
     color: colors.white,
-    fontSize: 20,            // Larger cover title
+    fontSize: 28,            // Significantly larger cover title
     fontWeight: "bold",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginVertical: 4,
   },
   coverSubtitle: {
     color: colors.accent,
-    fontSize: 11,
+    fontSize: 9.5,
     fontWeight: "bold",
+    letterSpacing: 1.5,
+    textTransform: "uppercase",
   },
   // Greeting Section
   greetingSection: {
@@ -340,7 +349,7 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    width: "16%",
+    width: "14%",
   },
   serviceIconWrapper: {
     height: 16,
@@ -585,9 +594,9 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.accent,
     borderRadius: 8,
-    padding: 12,
+    padding: 10,
     backgroundColor: colors.bgLight,
-    marginBottom: 12,
+    marginBottom: 8,
   },
   bankTitle: {
     fontSize: 11.5,
@@ -623,7 +632,7 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     padding: 12,
     backgroundColor: colors.accentLight, // Cream Gold Highlight
-    marginBottom: 12,
+    marginBottom: 8,
   },
   brandProfileHeadline: {
     fontSize: 12.5,
@@ -721,6 +730,7 @@ const styles = StyleSheet.create({
 
 interface ServiceStatus {
   flights: boolean;
+  train: boolean;
   hotels: boolean;
   tours: boolean;
   transport: boolean;
@@ -737,6 +747,7 @@ interface ItineraryDay {
   image?: string;
   transferBasis?: string;
   customTransferBasis?: string;
+  trainPrice?: string;
 }
 
 interface HotelItem {
@@ -761,6 +772,7 @@ interface PDFData {
   vehicleType: string;
   transferBasis?: string;
   customTransferBasis?: string;
+  trainPrice?: string;
   pickupPoint: string;
   dropPoint: string;
   pickDrop?: string;
@@ -882,6 +894,14 @@ const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, d
     ? (selectedCustom || "Custom")
     : selectedBasis;
   
+  if (selectedBasis === "TRAIN BASIS (RAIL)") {
+    const price = dayItem ? dayItem.trainPrice : data.trainPrice;
+    if (price) {
+      return `RAIL: TRAIN BASIS (RAIL) (Price: Rs. ${price}/-)`;
+    }
+    return "RAIL: TRAIN BASIS (RAIL)";
+  }
+  
   if (basis === "NONE") {
     return `Cab: ${data.vehicleType}`;
   }
@@ -908,8 +928,9 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         <View style={{ ...styles.coverImageContainer, height: 330, marginBottom: 25 }}>
           <Image src={data.coverImage || getAssetUrl("/goa.png")} style={styles.coverImage} />
           <View style={styles.coverTitleOverlay}>
-            <Text style={{ ...styles.coverTitle, fontSize: 24 }}>{data.destination.toUpperCase()}</Text>
-            <Text style={styles.coverSubtitle}>PREMIUM TOUR PACKAGE</Text>
+            <Text style={styles.coverSubtitle}>EXQUISITE GETAWAY TO</Text>
+            <Text style={styles.coverTitle}>{data.destination.toUpperCase()}</Text>
+            <Text style={{ ...styles.coverSubtitle, color: colors.white, fontSize: 8, marginTop: 2 }}>PREMIUM TOUR PACKAGE</Text>
           </View>
         </View>
 
@@ -1041,6 +1062,12 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.serviceItem}>
             <View style={styles.serviceIconWrapper}>
+              {data.services?.train ? <VectorCheck size={16} /> : <VectorCross size={16} />}
+            </View>
+            <Text style={styles.serviceName}>Train</Text>
+          </View>
+          <View style={styles.serviceItem}>
+            <View style={styles.serviceIconWrapper}>
               {data.services?.hotels ? <VectorCheck size={16} /> : <VectorCross size={16} />}
             </View>
             <Text style={styles.serviceName}>Hotels</Text>
@@ -1165,7 +1192,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
                 <View style={styles.hotelNameRow}>
                   <Text style={styles.hotelName}>
                     <Link style={styles.hotelLink} src={`https://www.google.com/search?q=${encodeURIComponent(hotel.hotelName)}`}>
-                      {hotel.hotelName}
+                      {hotel.hotelName} (View)
                     </Link>
                   </Text>
                   <View style={styles.hotelStarsWrapper}>
@@ -1441,7 +1468,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         {/* Thank You section */}
         <View style={styles.thankYouBlock}>
           <Text style={styles.thankYouTitle}>THANK YOU</Text>
-          <Text style={styles.thankYouSub}>MAHADEV ONLINE AND TOUR TRAVELS</Text>
+          <Text style={styles.thankYouSub}>MAHADEV ONLINE AND HOLIDAYS</Text>
           
           <View style={styles.thankYouLinksRow}>
             <Link src="https://share.google/uKI9joTM9gh5KYzWR" style={styles.mapsLink}>
@@ -1455,20 +1482,16 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         </View>
 
         {/* Tour Advisor Details Card on Last Page */}
-        <View style={{ marginTop: 15, padding: 12, backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent, borderRadius: 6, alignItems: "center" }}>
-          <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary, marginBottom: 4, letterSpacing: 0.5 }}>
+        <View style={{ marginTop: 10, padding: 10, backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent, borderRadius: 6, alignItems: "center" }}>
+          <Text style={{ fontSize: 9.5, fontWeight: "bold", color: colors.primary, marginBottom: 3, letterSpacing: 0.5 }}>
             YOUR TOUR ADVISOR
           </Text>
-          <Text style={{ fontSize: 11, fontWeight: "bold", color: colors.secondary, marginBottom: 2 }}>
+          <Text style={{ fontSize: 10.5, fontWeight: "bold", color: colors.secondary, marginBottom: 2 }}>
             VISHAL CHAUHAN (DARJI)
           </Text>
-          <Text style={{ fontSize: 9.5, color: colors.primary, fontWeight: "bold" }}>
+          <Text style={{ fontSize: 9, color: colors.primary, fontWeight: "bold" }}>
             Phone: +91 9328151481   |   Email: mahadevholidays2000@gmail.com
           </Text>
-        </View>
-
-        <View style={{ alignItems: "center", marginTop: 15 }}>
-          <Image src={getAssetUrl("/logo.jpg")} style={{ height: 80, width: "auto" }} />
         </View>
 
         {/* Footer with Columns Layout (GSTIN removed) */}

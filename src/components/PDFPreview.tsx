@@ -4,6 +4,7 @@ import { Check, X, Star } from "lucide-react";
 
 interface ServiceStatus {
   flights: boolean;
+  train: boolean;
   hotels: boolean;
   tours: boolean;
   transport: boolean;
@@ -31,6 +32,7 @@ interface ItineraryDay {
   image?: string;
   transferBasis?: string;
   customTransferBasis?: string;
+  trainPrice?: string;
 }
 
 interface PDFData {
@@ -44,6 +46,7 @@ interface PDFData {
   vehicleType: string;
   transferBasis?: string;
   customTransferBasis?: string;
+  trainPrice?: string;
   pickupPoint: string;
   dropPoint: string;
   pickDrop?: string;
@@ -133,6 +136,14 @@ const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, d
   const basis = selectedBasis === "CUSTOM BASIS"
     ? (selectedCustom || "Custom")
     : selectedBasis;
+  
+  if (selectedBasis === "TRAIN BASIS (RAIL)") {
+    const price = dayItem ? dayItem.trainPrice : data.trainPrice;
+    if (price) {
+      return `RAIL: TRAIN BASIS (RAIL) (Price: Rs. ${price}/-)`;
+    }
+    return "RAIL: TRAIN BASIS (RAIL)";
+  }
   
   if (basis === "NONE") {
     return `Cab: ${data.vehicleType}`;
@@ -914,9 +925,25 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         {/* Large Cover Photo Container */}
         <div className="cover-photo-wrapper" style={{ height: "300px", marginBottom: "20px" }}>
           <img src={data.coverImage || "/goa.png"} alt="Destination Cover" className="cover-photo" style={{ height: "100%" }} />
-          <div className="cover-overlay">
-            <h2 style={{ fontSize: "1.7rem" }}>{(data.destination || "").toUpperCase()}</h2>
-            <span className="cover-badge">PREMIUM TOUR PACKAGE</span>
+          <div className="cover-overlay" style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            backgroundColor: "rgba(10, 37, 64, 0.85)",
+            border: "2px solid #c5a059",
+            borderRadius: "8px",
+            padding: "15px 25px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "80%",
+            textAlign: "center"
+          }}>
+            <span style={{ fontSize: "0.62rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "1.5px", textTransform: "uppercase" }}>EXQUISITE GETAWAY TO</span>
+            <h2 style={{ fontSize: "2rem", fontWeight: "bold", color: "#ffffff", letterSpacing: "2px", margin: "4px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
+            <span style={{ fontSize: "0.55rem", color: "#ffffff", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase" }}>PREMIUM TOUR PACKAGE</span>
           </div>
         </div>
 
@@ -1151,7 +1178,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
                 <div className="hotel-name-row-preview">
                   <div className="hotel-headline">
                     <a href={`https://www.google.com/search?q=${encodeURIComponent(hotel.hotelName)}`} target="_blank" rel="noopener noreferrer" className="hotel-headline-link">
-                      {hotel.hotelName || ""}
+                      {hotel.hotelName || ""} <span style={{ fontSize: "0.75rem", color: "#c5a059", textDecoration: "underline", marginLeft: "4px" }}>(View)</span>
                     </a>
                   </div>
                   {renderStarsHtml(hotel.hotelStar)}
@@ -1424,7 +1451,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
 
         <div className="thank-you-banner">
           <span className="thank-you-large-text">THANK YOU</span>
-          <span className="thank-you-brand-sub">MAHADEV ONLINE AND TOUR TRAVELS</span>
+          <span className="thank-you-brand-sub">MAHADEV ONLINE AND HOLIDAYS</span>
           <div className="thank-you-links-row">
             <a href="https://share.google/uKI9joTM9gh5KYzWR" target="_blank" rel="noopener noreferrer" className="thank-you-link-item">
               View Location on Google Maps

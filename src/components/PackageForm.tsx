@@ -3,6 +3,7 @@ import { Plus, Trash2, ChevronRight, ChevronLeft, Download, Upload, Image as Ima
 
 interface ServiceStatus {
   flights: boolean;
+  train: boolean;
   hotels: boolean;
   tours: boolean;
   transport: boolean;
@@ -19,6 +20,7 @@ interface ItineraryDay {
   image?: string;
   transferBasis?: string;
   customTransferBasis?: string;
+  trainPrice?: string;
 }
 export interface HotelItem {
   id: string;
@@ -42,6 +44,7 @@ export interface PDFData {
   vehicleType: string;
   transferBasis?: string;
   customTransferBasis?: string;
+  trainPrice?: string;
   pickupPoint: string;
   dropPoint: string;
   pickDrop?: string;
@@ -841,6 +844,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                       ...data,
                       transferBasis: e.target.value,
                       customTransferBasis: e.target.value !== "CUSTOM BASIS" ? "" : (data.customTransferBasis || ""),
+                      trainPrice: e.target.value !== "TRAIN BASIS (RAIL)" ? "" : (data.trainPrice || ""),
                     });
                   }}
                 >
@@ -848,6 +852,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   <option value="SHARED BASIS (SHARING)">SHARED BASIS (SHARING)</option>
                   <option value="SIC (SEAT IN COACH)">SIC (SEAT IN COACH)</option>
                   <option value="SELF DRIVE / DIRECT">SELF DRIVE / DIRECT</option>
+                  <option value="TRAIN BASIS (RAIL)">TRAIN BASIS (RAIL)</option>
                   <option value="NONE">NONE</option>
                   <option value="CUSTOM BASIS">CUSTOM BASIS (WRITE IN)</option>
                 </select>
@@ -862,6 +867,19 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                     value={data.customTransferBasis || ""}
                     onChange={(e) => handleInputChange("customTransferBasis", e.target.value)}
                     placeholder="E.g. Volvo AC Sleeper Bus, Shatabdi Express Train"
+                  />
+                </div>
+              )}
+
+              {data.transferBasis === "TRAIN BASIS (RAIL)" && (
+                <div className="form-group">
+                  <label className="form-label">Train Ticket Price (Rs.)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={data.trainPrice || ""}
+                    onChange={(e) => handleInputChange("trainPrice", e.target.value)}
+                    placeholder="E.g. 3500 (Optional)"
                   />
                 </div>
               )}
@@ -1485,6 +1503,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                                 ...item,
                                 transferBasis: val,
                                 customTransferBasis: val !== "CUSTOM BASIS" ? "" : (item.customTransferBasis || ""),
+                                trainPrice: val !== "TRAIN BASIS (RAIL)" ? "" : (item.trainPrice || ""),
                               };
                             }
                             return item;
@@ -1500,6 +1519,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                         <option value="SHARED BASIS (SHARING)">SHARED BASIS (SHARING)</option>
                         <option value="SIC (SEAT IN COACH)">SIC (SEAT IN COACH)</option>
                         <option value="SELF DRIVE / DIRECT">SELF DRIVE / DIRECT</option>
+                        <option value="TRAIN BASIS (RAIL)">TRAIN BASIS (RAIL)</option>
                         <option value="NONE">NONE</option>
                         <option value="CUSTOM BASIS">CUSTOM BASIS (WRITE IN)</option>
                       </select>
@@ -1514,6 +1534,19 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                           value={dayItem.customTransferBasis || ""}
                           onChange={(e) => handleItineraryChange(index, "customTransferBasis", e.target.value)}
                           placeholder="E.g. Volvo AC Sleeper Bus, Shatabdi Express Train"
+                        />
+                      </div>
+                    )}
+
+                    {dayItem.transferBasis === "TRAIN BASIS (RAIL)" && (
+                      <div className="form-group">
+                        <label className="form-label">Train Price for this Day (Rs.)</label>
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={dayItem.trainPrice || ""}
+                          onChange={(e) => handleItineraryChange(index, "trainPrice", e.target.value)}
+                          placeholder="E.g. 1200 (Optional)"
                         />
                       </div>
                     )}

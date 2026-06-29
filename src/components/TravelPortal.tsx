@@ -26,6 +26,7 @@ const defaultGoaData: PDFData = {
   hotelStar: "3 Star (Deluxe)",
   services: {
     flights: false,
+    train: false,
     hotels: true,
     tours: true,
     transport: true,
@@ -303,6 +304,11 @@ export default function TravelPortal() {
             if (dest.advancePrice === undefined) {
               dest.advancePrice = "0";
             }
+            if (dest.services) {
+              if (dest.services.train === undefined) {
+                dest.services.train = false;
+              }
+            }
             // Pre-populate terms & policies if missing or empty
             if (!dest.inclusions || dest.inclusions.length === 0) {
               dest.inclusions = [
@@ -405,6 +411,11 @@ export default function TravelPortal() {
               }
               if (dest.advancePrice === undefined) {
                 dest.advancePrice = "0";
+              }
+              if (dest.services) {
+                if (dest.services.train === undefined) {
+                  dest.services.train = false;
+                }
               }
               // Pre-populate terms & policies if missing or empty
               if (!dest.inclusions || dest.inclusions.length === 0) {
