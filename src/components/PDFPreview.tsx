@@ -162,6 +162,8 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
   return (
     <div className="preview-sheet-container">
       <style jsx>{`
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700&family=Playfair+Display:ital,wght@0,700;1,700&display=swap');
+
         .preview-sheet-container {
           background-color: #e2e8f0;
           padding: 2rem 1rem;
@@ -913,6 +915,22 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         .thank-you-link-item:hover {
           color: #1d4ed8;
         }
+
+        /* Responsive scaling for mobile viewport previews */
+        @media (max-width: 640px) {
+          .preview-sheet-container {
+            padding: 1rem 0.25rem !important;
+            overflow-x: hidden !important;
+            width: 100vw !important;
+          }
+
+          .pdf-page-mock {
+            transform: scale(calc((100vw - 20px) / 595)) !important;
+            transform-origin: top center !important;
+            margin-bottom: calc(842px * (1 - ((100vw - 20px) / 595))) !important;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
+          }
+        }
       `}</style>
 
       {/* Page 1: Dedicated Luxury Cover Page */}
@@ -923,7 +941,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         </div>
 
         {/* Large Cover Photo Container */}
-        <div className="cover-photo-wrapper" style={{ height: "300px", marginBottom: "15px" }}>
+        <div className="cover-photo-wrapper" style={{ height: "330px", marginBottom: "15px" }}>
           <img src={data.coverImage || "/goa.png"} alt="Destination Cover" className="cover-photo" style={{ height: "100%" }} />
           <div className="cover-overlay" style={{
             position: "absolute",
@@ -942,7 +960,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
             textAlign: "left"
           }}>
             <span style={{ fontSize: "0.65rem", color: "#cbd5e1", letterSpacing: "0.5px" }}>Here is your package for</span>
-            <h2 style={{ fontSize: "1.6rem", fontWeight: "bold", color: "#ffffff", letterSpacing: "1px", margin: "3px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
+            <h2 style={{ fontSize: "3.0rem", fontFamily: "'Playfair Display', serif", fontWeight: "bold", color: "#ffffff", letterSpacing: "1px", margin: "3px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
             <span style={{ fontSize: "0.75rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "0.5px" }}>{(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package</span>
           </div>
         </div>

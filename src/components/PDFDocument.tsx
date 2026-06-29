@@ -13,6 +13,8 @@ import {
   Circle,
 } from "@react-pdf/renderer";
 
+import { playfairDisplayBoldBase64, montserratBoldBase64 } from "./fontsBase64";
+
 // Register custom Google Fonts for premium styling
 Font.register({
   family: "Inter",
@@ -20,6 +22,20 @@ Font.register({
     { src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-regular-webfont.ttf", fontWeight: 400 },
     { src: "https://cdnjs.cloudflare.com/ajax/libs/ink/3.1.10/fonts/Roboto/roboto-bold-webfont.ttf", fontWeight: 700 },
   ],
+});
+
+Font.register({
+  family: "Montserrat",
+  fonts: [
+    { src: montserratBoldBase64, fontWeight: 700 }
+  ]
+});
+
+Font.register({
+  family: "Playfair Display",
+  fonts: [
+    { src: playfairDisplayBoldBase64, fontWeight: 700 }
+  ]
 });
 
 // Luxury Color Palette
@@ -134,7 +150,7 @@ const styles = StyleSheet.create({
   coverImageContainer: {
     position: "relative",
     width: "100%",
-    height: 300,             // Enlarged cover image (Flamingo Style)
+    height: 330,             // Enlarged cover image (Flamingo Style)
     marginBottom: 12,
     borderRadius: 8,
     borderWidth: 2,
@@ -923,11 +939,11 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         </View>
 
         {/* Large Cover Photo */}
-        <View style={{ ...styles.coverImageContainer, height: 300, marginBottom: 15 }}>
+        <View style={{ ...styles.coverImageContainer, height: 330, marginBottom: 15 }}>
           <Image src={data.coverImage || getAssetUrl("/goa.png")} style={styles.coverImage} />
           <View style={styles.coverTitleOverlay}>
             <Text style={{ fontSize: 9.5, color: "#cbd5e1", letterSpacing: 0.5, marginBottom: 2 }}>Here is your package for</Text>
-            <Text style={{ ...styles.coverTitle, fontSize: 22, fontWeight: "bold", color: colors.white, letterSpacing: 1, textTransform: "uppercase", marginVertical: 3 }}>
+            <Text style={{ ...styles.coverTitle, fontFamily: "Playfair Display", fontSize: 36, fontWeight: "bold", color: colors.white, letterSpacing: 1.5, textTransform: "uppercase", marginVertical: 3 }}>
               {data.destination.toUpperCase()}
             </Text>
             <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "bold", letterSpacing: 0.5 }}>
