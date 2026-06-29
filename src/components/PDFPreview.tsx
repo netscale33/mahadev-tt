@@ -11,12 +11,26 @@ interface ServiceStatus {
   addons: boolean;
 }
 
+interface HotelItem {
+  id: string;
+  hotelName: string;
+  hotelStar: string;
+  hotelRoomType: string;
+  hotelMealPlan: string;
+  hotelCheckIn: string;
+  hotelCheckOut: string;
+  hotelImage?: string;
+}
+
 interface ItineraryDay {
   day: number;
   title: string;
   stay: string;
   description: string;
   mealPlan: string;
+  image?: string;
+  transferBasis?: string;
+  customTransferBasis?: string;
 }
 
 interface PDFData {
@@ -28,15 +42,13 @@ interface PDFData {
   numPax: string;
   numRooms: string;
   vehicleType: string;
-  pickDrop: string;
+  transferBasis?: string;
+  customTransferBasis?: string;
+  pickupPoint: string;
+  dropPoint: string;
+  pickDrop?: string;
   mealPlan: string;
-  hotelStar: string;
   services: ServiceStatus;
-  hotelName: string;
-  hotelRoomType: string;
-  hotelMealPlan: string;
-  hotelCheckIn: string;
-  hotelCheckOut: string;
   pricePerPerson: string;
   totalPrice: string;
   gstExtra: boolean;
@@ -46,6 +58,9 @@ interface PDFData {
   paymentPolicies: string[];
   cancellationPolicies: string[];
   bookingTerms: string[];
+  coverImage?: string;
+  hotels: HotelItem[];
+  hotelLibrary?: HotelItem[];
 }
 
 // Simple date formatter to convert YYYY-MM-DD to DD MMM YYYY
@@ -110,14 +125,27 @@ const renderStarsHtml = (starStr: string) => {
   );
 };
 
+const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, data: PDFData) => {
+  const selectedBasis = (dayItem && dayItem.transferBasis) || data.transferBasis || "PRIVATE BASIS (PVT)";
+  const selectedCustom = (dayItem && dayItem.transferBasis) ? (dayItem.customTransferBasis || "") : (data.customTransferBasis || "");
+  
+  const basis = selectedBasis === "CUSTOM BASIS"
+    ? (selectedCustom || "Custom")
+    : selectedBasis;
+  
+  if (basis === "NONE") {
+    return `Cab: ${data.vehicleType}`;
+  }
+  
+  if (data.vehicleType === "No Transport (Direct Check-in)") {
+    return `Cab: ${basis}`;
+  }
+  return `Cab: ${data.vehicleType} (${basis})`;
+};
+
 export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
   const formattedArrival = formatPreviewDate(data.arrivalDate);
-  const formattedCheckIn = formatDateTime(data.hotelCheckIn);
-  const formattedCheckOut = formatDateTime(data.hotelCheckOut);
-
-  // Split itinerary: Days 1-2 on Page 3, Days 3-4 on Page 4
-  const page3Days = (data.itinerary || []).filter(d => d.day <= 2);
-  const page4Days = (data.itinerary || []).filter(d => d.day > 2);
+  const totalPages = 5 + (data.itinerary || []).length;
 
   return (
     <div className="preview-sheet-container">
@@ -141,7 +169,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           background-color: #ffffff;
           box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15), 0 10px 10px -5px rgba(0,0,0,0.1);
           border-radius: 6px;
-          padding: 85px 45px 70px 45px; /* Restored standard padding */
+          padding: 105px 45px 70px 45px; /* Increased to clear larger header logo */
           position: relative;
           display: flex;
           flex-direction: column;
@@ -169,7 +197,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         }
 
         .pdf-logo-large {
-          height: 52px;
+          height: 70px;
           width: auto;
         }
 
@@ -476,7 +504,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
 
         .hotel-img-placeholder {
           width: 100%; /* Giant full-width hotel image */
-          height: 140px;
+          height: 180px;            /* Balanced preview height */
           border-radius: 6px;
           overflow: hidden;
           position: relative;
@@ -546,10 +574,10 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
 
         /* Pricing Card */
         .price-card-box {
-          background-color: #0a2540;
-          border: 2px solid #c5a059;
-          border-radius: 8px;
-          padding: 1.1rem 1.5rem;
+          background-color: #faf6eb; /* Cream background */
+          border: 3px solid #c5a059; /* Thick gold border */
+          border-radius: 10px;
+          padding: 1.25rem 1.75rem;
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -560,24 +588,20 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         .price-row-item {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           width: 100%;
           font-size: 1.1rem;
         }
 
         .price-label-text {
           font-weight: 700;
-          color: #ffffff;
-        }
-
-        .price-value-text {
-          font-weight: 700;
-          color: #c5a059;
+          color: #0a2540; /* Navy text */
         }
 
         .price-total-text {
-          font-size: 1.55rem;
+          font-size: 1.9rem; /* Big bold price size */
           font-weight: 800;
-          color: #c5a059;
+          color: #0a2540; /* Navy price color */
         }
 
         .price-gst-sub {
@@ -652,7 +676,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
 
         .itinerary-day-big-img-box {
           width: 100%;
-          height: 140px; /* Giant height */
+          height: 200px; /* Cinematic preview height to match PDF design */
           border-radius: 6px;
           overflow: hidden;
           position: relative;
@@ -879,7 +903,89 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         }
       `}</style>
 
-      {/* Page 1: Overview Cover Sheet & Services */}
+      {/* Page 1: Dedicated Luxury Cover Page */}
+      <div className="pdf-page-mock" style={{ padding: "45px 45px 45px 45px" }}>
+        {/* Center Logo */}
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: "25px", width: "100%" }}>
+          <Image src="/logo.jpg" alt="Logo" width={260} height={90} className="pdf-logo-large" style={{ height: "90px", width: "auto" }} />
+        </div>
+
+        {/* Large Cover Photo Container */}
+        <div className="cover-photo-wrapper" style={{ height: "300px", marginBottom: "20px" }}>
+          <img src={data.coverImage || "/goa.png"} alt="Destination Cover" className="cover-photo" style={{ height: "100%" }} />
+          <div className="cover-overlay">
+            <h2 style={{ fontSize: "1.7rem" }}>{(data.destination || "").toUpperCase()}</h2>
+            <span className="cover-badge">PREMIUM TOUR PACKAGE</span>
+          </div>
+        </div>
+
+        {/* Quotation Details Summary Box */}
+        <div style={{
+          border: "2px solid #c5a059",
+          borderRadius: "8px",
+          padding: "15px",
+          backgroundColor: "#faf6eb",
+          marginTop: "10px",
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "8px"
+        }}>
+          <div style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#0a2540", borderBottom: "1.5px solid #c5a059", paddingBottom: "4px", textTransform: "uppercase" }}>
+            Quotation Details
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>PREPARED FOR :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.guestName || ""}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>DURATION :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>
+                {(data.durationNights ?? 0).toString().padStart(2, "0")} Nights / {(data.durationDays ?? 0).toString().padStart(2, "0")} Days
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>TRAVEL DATE :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{formattedArrival}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>TOTAL TRAVELERS :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.numPax || ""}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem" }}>
+              <span style={{ color: "#64748b", fontWeight: "bold" }}>ACCOMMODATION :</span>
+              <span style={{ fontWeight: "bold", color: "#0a2540" }}>{data.numRooms || ""}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Cover footer */}
+        <div style={{
+          position: "absolute",
+          bottom: "35px",
+          left: "45px",
+          right: "45px",
+          borderTop: "1.5px solid #c5a059",
+          paddingTop: "8px",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#0a2540" }}>MAHADEV HOLIDAYS</span>
+            <span style={{ fontSize: "0.65rem", color: "#64748b" }}>Explore • Experience • Enjoy</span>
+            <span style={{ fontSize: "0.65rem", color: "#64748b" }}>Estd: 2022</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#0a2540" }}>TOUR ADVISOR: VISHAL CHAUHAN (DARJI)</span>
+            <span style={{ fontSize: "0.65rem", color: "#64748b" }}>Ph: 9328151481</span>
+            <span style={{ fontSize: "0.65rem", color: "#64748b" }}>Email: mahadevholidays2000@gmail.com</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Page 2: Welcome Greeting & Overview Summary Table */}
       <div className="pdf-page-mock">
         <div className="pdf-header">
           <div className="pdf-header-main">
@@ -887,13 +993,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
         </div>
 
-        <div className="cover-photo-wrapper">
-          <Image src="/goa.png" alt="Goa Cover" width={515} height={230} className="cover-photo" />
-          <div className="cover-overlay">
-            <h2>{(data.destination || "").toUpperCase()}</h2>
-            <span className="cover-badge">PREMIUM QUOTATION</span>
-          </div>
-        </div>
+        <div className="page-title">Welcome Greeting & Package Overview</div>
 
         <div className="greeting-section">
           <div className="greeting-title">Dear Sir/Madam,</div>
@@ -928,11 +1028,17 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
           <div className="details-grid-row">
             <div className="details-label-cell">Vehicle Type (Transfers)</div>
-            <div className="details-value-cell">{data.vehicleType || ""}</div>
+            <div className="details-value-cell">
+              {getDayItineraryTransferText(null, data).replace("Cab: ", "")}
+            </div>
           </div>
           <div className="details-grid-row">
-            <div className="details-label-cell">Pick & Drop Point</div>
-            <div className="details-value-cell">{data.pickDrop || ""}</div>
+            <div className="details-label-cell">Pickup Point</div>
+            <div className="details-value-cell">{data.pickupPoint || "Not Specified"}</div>
+          </div>
+          <div className="details-grid-row">
+            <div className="details-label-cell">Drop Point</div>
+            <div className="details-value-cell">{data.dropPoint || "Not Specified"}</div>
           </div>
           <div className="details-grid-row">
             <div className="details-label-cell">Meal Plan</div>
@@ -940,7 +1046,9 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
           <div className="details-grid-row">
             <div className="details-label-cell">Hotel (Stay Category)</div>
-            <div className="details-value-cell">{data.hotelStar || ""}</div>
+            <div className="details-value-cell">
+              {data.hotels ? data.hotels.map(h => h.hotelStar).filter((v, i, a) => a.indexOf(v) === i).join(", ") : ""}
+            </div>
           </div>
         </div>
 
@@ -962,7 +1070,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
           <div className="footer-col">
             <span className="footer-col-title">OUR ACHIEVEMENTS</span>
-            <span className="footer-col-text">Estd: 2000</span>
+            <span className="footer-col-text">Estd: 2022</span>
             <span className="footer-col-text">Govt Approved Tour Operator</span>
           </div>
           <div className="footer-col">
@@ -970,7 +1078,13 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
             <span className="footer-col-text">Approved by Ministry of Tourism</span>
             <span className="footer-col-text">Government of India</span>
           </div>
-          <span className="page-badge">Page 1/6</span>
+          <div className="footer-col">
+            <span className="footer-col-title">TOUR ADVISOR</span>
+            <span className="footer-col-text">VISHAL CHAUHAN (DARJI)</span>
+            <span className="footer-col-text">Ph: 9328151481</span>
+            <span className="footer-col-text">mahadevholidays2000@gmail.com</span>
+          </div>
+          <span className="page-badge">Page 2/{totalPages}</span>
         </div>
       </div>
 
@@ -986,59 +1100,54 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
 
         {/* Pricing Summary Card */}
         <div className="price-card-box">
-          {data.pricePerPerson && (
-            <div className="price-row-item" style={{ marginBottom: "0.25rem" }}>
-              <span className="price-label-text">PRICE PER PERSON :</span>
-              <span className="price-value-text">Rs. {data.pricePerPerson}/-</span>
-            </div>
-          )}
           <div className="price-row-item">
             <span className="price-label-text" style={{ fontSize: "1.1rem" }}>TOTAL PACKAGE PRICE :</span>
             <span className="price-total-text">Rs. {data.totalPrice}/-</span>
           </div>
-          {data.gstExtra && (
-            <div className="price-gst-sub">+ 5% GST EXTRA WILL BE CHARGED</div>
-          )}
         </div>
 
-        <div className="page-title">Hotel Stay Details</div>
-
-        {/* Hotel Stay Card - Placed BELOW Pricing Card with HUGE Image */}
-        <div className="hotel-detail-card">
-          <div className="hotel-text-info">
-            <div className="hotel-name-row-preview">
-              <div className="hotel-headline">
-                <a href="https://www.google.com/search?q=Alvorada+Resort+Arpora+Goa" target="_blank" rel="noopener noreferrer" className="hotel-headline-link">
-                  {data.hotelName || ""}
-                </a>
+        {/* Hotel Stay Cards - Placed BELOW Pricing Card */}
+        {data.hotels && data.hotels.map((hotel, index) => {
+          const hotelCheckInFormatted = formatDateTime(hotel.hotelCheckIn);
+          const hotelCheckOutFormatted = formatDateTime(hotel.hotelCheckOut);
+          return (
+            <div className="hotel-detail-card" key={hotel.id || index} style={{ marginTop: "0.5rem" }}>
+              <div className="hotel-text-info">
+                <div className="hotel-name-row-preview">
+                  <div className="hotel-headline">
+                    <a href={`https://www.google.com/search?q=${encodeURIComponent(hotel.hotelName)}`} target="_blank" rel="noopener noreferrer" className="hotel-headline-link">
+                      {hotel.hotelName || ""}
+                    </a>
+                  </div>
+                  {renderStarsHtml(hotel.hotelStar)}
+                </div>
               </div>
-              {renderStarsHtml(data.hotelStar)}
-            </div>
-          </div>
 
-          <div className="hotel-img-placeholder">
-            <Image src="/hotel.png" alt="Hotel Cover" fill className="hotel-img" />
-          </div>
+              <div className="hotel-img-placeholder">
+                <img src={hotel.hotelImage || "/hotel.png"} alt="Hotel Cover" className="hotel-img" />
+              </div>
 
-          <div className="hotel-field-grid">
-            <div className="hotel-field-row">
-              <span className="hotel-field-label">Room Type:</span>
-              <span className="hotel-field-value">{data.hotelRoomType || ""}</span>
+              <div className="hotel-field-grid">
+                <div className="hotel-field-row">
+                  <span className="hotel-field-label">Room Type:</span>
+                  <span className="hotel-field-value">{hotel.hotelRoomType || ""}</span>
+                </div>
+                <div className="hotel-field-row">
+                  <span className="hotel-field-label">Meal Plan:</span>
+                  <span className="hotel-field-value">{hotel.hotelMealPlan || ""}</span>
+                </div>
+                <div className="hotel-field-row">
+                  <span className="hotel-field-label">Check-in:</span>
+                  <span className="hotel-field-value">{hotelCheckInFormatted}</span>
+                </div>
+                <div className="hotel-field-row">
+                  <span className="hotel-field-label">Check-out:</span>
+                  <span className="hotel-field-value">{hotelCheckOutFormatted}</span>
+                </div>
+              </div>
             </div>
-            <div className="hotel-field-row">
-              <span className="hotel-field-label">Meal Plan:</span>
-              <span className="hotel-field-value">{data.hotelMealPlan || ""}</span>
-            </div>
-            <div className="hotel-field-row">
-              <span className="hotel-field-label">Check-in:</span>
-              <span className="hotel-field-value">{formattedCheckIn}</span>
-            </div>
-            <div className="hotel-field-row">
-              <span className="hotel-field-label">Check-out:</span>
-              <span className="hotel-field-value">{formattedCheckOut}</span>
-            </div>
-          </div>
-        </div>
+          );
+        })}
 
         <div className="pdf-footer">
           <div className="footer-left">
@@ -1046,7 +1155,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
           <div className="footer-col">
             <span className="footer-col-title">OUR ACHIEVEMENTS</span>
-            <span className="footer-col-text">Estd: 2000</span>
+            <span className="footer-col-text">Estd: 2022</span>
             <span className="footer-col-text">Govt Approved Tour Operator</span>
           </div>
           <div className="footer-col">
@@ -1054,23 +1163,29 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
             <span className="footer-col-text">Approved by Ministry of Tourism</span>
             <span className="footer-col-text">Government of India</span>
           </div>
-          <span className="page-badge">Page 2/6</span>
+          <div className="footer-col">
+            <span className="footer-col-title">TOUR ADVISOR</span>
+            <span className="footer-col-text">VISHAL CHAUHAN (DARJI)</span>
+            <span className="footer-col-text">Ph: 9328151481</span>
+            <span className="footer-col-text">mahadevholidays2000@gmail.com</span>
+          </div>
+          <span className="page-badge">Page 3/{totalPages}</span>
         </div>
       </div>
 
-      {/* Page 3: Detailed daily timeline Day 1 & 2 (Giant photos vertically stacked) */}
-      <div className="pdf-page-mock">
-        <div className="pdf-header">
-          <div className="pdf-header-main">
-            <Image src="/logo.jpg" alt="Mahadev Holidays Logo" width={180} height={52} className="pdf-logo-large" />
+      {/* Detailed daily timeline - One Page Per Day (Giant photos vertically stacked) */}
+      {(data.itinerary || []).map((dayItem, idx) => (
+        <div className="pdf-page-mock" key={dayItem.day || idx}>
+          <div className="pdf-header">
+            <div className="pdf-header-main">
+              <Image src="/logo.jpg" alt="Mahadev Holidays Logo" width={180} height={52} className="pdf-logo-large" />
+            </div>
           </div>
-        </div>
 
-        <div className="page-title">Tour Itinerary Details (Day 1 & 2)</div>
+          <div className="page-title">Tour Itinerary Details (Day {dayItem.day})</div>
 
-        <div className="itinerary-timeline-wrapper">
-          {page3Days.map((dayItem, idx) => (
-            <div className="itinerary-day-card" key={idx}>
+          <div className="itinerary-timeline-wrapper">
+            <div className="itinerary-day-card" style={{ marginBottom: 0 }}>
               <div className="itinerary-day-title-row">
                 <span className="itinerary-day-label">Day {dayItem.day}: {dayItem.title || ""}</span>
                 {dayItem.stay && <span className="itinerary-day-stay-tag">Stay: {dayItem.stay}</span>}
@@ -1078,91 +1193,44 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
               
               {/* Daily big photo block */}
               <div className="itinerary-day-big-img-box">
-                <Image src={getDayImagePreview(dayItem.day)} alt={`Day ${dayItem.day}`} fill className="day-itinerary-big-img" />
+                <img src={dayItem.image || getDayImagePreview(dayItem.day)} alt={`Day ${dayItem.day}`} className="day-itinerary-big-img" />
               </div>
 
               <p className="itinerary-day-description-text">{dayItem.description || ""}</p>
               
               <div className="itinerary-meta-row-preview">
-                {dayItem.mealPlan && <div className="itinerary-day-meal-plan-text">Meals Included: (B) {dayItem.mealPlan}</div>}
+                {dayItem.mealPlan && <div className="itinerary-day-meal-plan-text">Meals: {dayItem.mealPlan}</div>}
                 <div className="itinerary-badge-green-preview">
-                  {dayItem.day === 4 ? "Departure Transfer" : dayItem.day === 1 ? "Private Transfer" : "Sightseeing Transfer"}
+                  {getDayItineraryTransferText(dayItem, data)}
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-
-        <div className="pdf-footer">
-          <div className="footer-left">
-            <Image src="/logo.jpg" alt="Logo" width={80} height={28} className="pdf-logo-small" />
           </div>
-          <div className="footer-col">
-            <span className="footer-col-title">OUR ACHIEVEMENTS</span>
-            <span className="footer-col-text">Estd: 2000</span>
-            <span className="footer-col-text">Govt Approved Tour Operator</span>
-          </div>
-          <div className="footer-col">
-            <span className="footer-col-title">LEGAL INFO</span>
-            <span className="footer-col-text">Approved by Ministry of Tourism</span>
-            <span className="footer-col-text">Government of India</span>
-          </div>
-          <span className="page-badge">Page 3/6</span>
-        </div>
-      </div>
 
-      {/* Page 4: Detailed daily timeline Day 3 & 4 (Giant photos vertically stacked) */}
-      <div className="pdf-page-mock">
-        <div className="pdf-header">
-          <div className="pdf-header-main">
-            <Image src="/logo.jpg" alt="Mahadev Holidays Logo" width={180} height={52} className="pdf-logo-large" />
-          </div>
-        </div>
-
-        <div className="page-title">Tour Itinerary Details (Day 3 & 4)</div>
-
-        <div className="itinerary-timeline-wrapper">
-          {page4Days.map((dayItem, idx) => (
-            <div className="itinerary-day-card" key={idx}>
-              <div className="itinerary-day-title-row">
-                <span className="itinerary-day-label">Day {dayItem.day}: {dayItem.title || ""}</span>
-                {dayItem.stay && <span className="itinerary-day-stay-tag">Stay: {dayItem.stay}</span>}
-              </div>
-              
-              {/* Daily big photo block */}
-              <div className="itinerary-day-big-img-box">
-                <Image src={getDayImagePreview(dayItem.day)} alt={`Day ${dayItem.day}`} fill className="day-itinerary-big-img" />
-              </div>
-
-              <p className="itinerary-day-description-text">{dayItem.description || ""}</p>
-
-              <div className="itinerary-meta-row-preview">
-                {dayItem.mealPlan && <div className="itinerary-day-meal-plan-text">Meals Included: (B) {dayItem.mealPlan}</div>}
-                <div className="itinerary-badge-green-preview">
-                  {dayItem.day === 4 ? "Departure Transfer" : dayItem.day === 1 ? "Private Transfer" : "Sightseeing Transfer"}
-                </div>
-              </div>
+          <div className="pdf-footer">
+            <div className="footer-left">
+              <Image src="/logo.jpg" alt="Logo" width={80} height={28} className="pdf-logo-small" />
             </div>
-          ))}
+            <div className="footer-col">
+              <span className="footer-col-title">OUR ACHIEVEMENTS</span>
+              <span className="footer-col-text">Estd: 2022</span>
+              <span className="footer-col-text">Govt Approved Tour Operator</span>
+            </div>
+            <div className="footer-col">
+              <span className="footer-col-title">LEGAL INFO</span>
+              <span className="footer-col-text">Approved by Ministry of Tourism</span>
+              <span className="footer-col-text">Government of India</span>
+            </div>
+            <div className="footer-col">
+              <span className="footer-col-title">TOUR ADVISOR</span>
+              <span className="footer-col-text">VISHAL CHAUHAN (DARJI)</span>
+              <span className="footer-col-text">Ph: 9328151481</span>
+              <span className="footer-col-text">mahadevholidays2000@gmail.com</span>
+            </div>
+            <span className="page-badge">Page {4 + idx}/{totalPages}</span>
+          </div>
         </div>
-
-        <div className="pdf-footer">
-          <div className="footer-left">
-            <Image src="/logo.jpg" alt="Logo" width={80} height={28} className="pdf-logo-small" />
-          </div>
-          <div className="footer-col">
-            <span className="footer-col-title">OUR ACHIEVEMENTS</span>
-            <span className="footer-col-text">Estd: 2000</span>
-            <span className="footer-col-text">Govt Approved Tour Operator</span>
-          </div>
-          <div className="footer-col">
-            <span className="footer-col-title">LEGAL INFO</span>
-            <span className="footer-col-text">Approved by Ministry of Tourism</span>
-            <span className="footer-col-text">Government of India</span>
-          </div>
-          <span className="page-badge">Page 4/6</span>
-        </div>
-      </div>
+      ))}
 
       {/* Page 5: Terms & Policies */}
       <div className="pdf-page-mock">
@@ -1242,7 +1310,7 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
           <div className="footer-col">
             <span className="footer-col-title">OUR ACHIEVEMENTS</span>
-            <span className="footer-col-text">Estd: 2000</span>
+            <span className="footer-col-text">Estd: 2022</span>
             <span className="footer-col-text">Govt Approved Tour Operator</span>
           </div>
           <div className="footer-col">
@@ -1250,7 +1318,13 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
             <span className="footer-col-text">Approved by Ministry of Tourism</span>
             <span className="footer-col-text">Government of India</span>
           </div>
-          <span className="page-badge">Page 5/6</span>
+          <div className="footer-col">
+            <span className="footer-col-title">TOUR ADVISOR</span>
+            <span className="footer-col-text">VISHAL CHAUHAN (DARJI)</span>
+            <span className="footer-col-text">Ph: 9328151481</span>
+            <span className="footer-col-text">mahadevholidays2000@gmail.com</span>
+          </div>
+          <span className="page-badge">Page {4 + (data.itinerary || []).length}/{totalPages}</span>
         </div>
       </div>
 
@@ -1327,13 +1401,39 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
           </div>
         </div>
 
+        {/* Tour Advisor Details Card on Last Page */}
+        <div style={{
+          marginTop: "15px",
+          padding: "12px",
+          backgroundColor: "#faf6eb",
+          border: "1.5px solid #c5a059",
+          borderRadius: "6px",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center"
+        }}>
+          <span style={{ fontSize: "10px", fontWeight: "bold", color: "#0a2540", marginBottom: "4px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+            Your Tour Advisor
+          </span>
+          <span style={{ fontSize: "11px", fontWeight: "bold", color: "#c5a059", marginBottom: "2px" }}>
+            VISHAL CHAUHAN (DARJI)
+          </span>
+          <span style={{ fontSize: "9.5px", color: "#0a2540", fontWeight: "bold" }}>
+            Phone: +91 9328151481   |   Email: mahadevholidays2000@gmail.com
+          </span>
+        </div>
+
+        <div style={{ display: "flex", justifyContent: "center", marginTop: "1.5rem", marginBottom: "1rem" }}>
+          <img src="/logo.jpg" alt="Mahadev Holidays Large Logo" style={{ height: "60px", width: "auto", opacity: 0.9 }} />
+        </div>
+
         <div className="pdf-footer">
           <div className="footer-left">
             <Image src="/logo.jpg" alt="Logo" width={80} height={28} className="pdf-logo-small" />
           </div>
           <div className="footer-col">
             <span className="footer-col-title">OUR ACHIEVEMENTS</span>
-            <span className="footer-col-text">Estd: 2000</span>
+            <span className="footer-col-text">Estd: 2022</span>
             <span className="footer-col-text">Govt Approved Tour Operator</span>
           </div>
           <div className="footer-col">
@@ -1341,7 +1441,13 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
             <span className="footer-col-text">Approved by Ministry of Tourism</span>
             <span className="footer-col-text">Government of India</span>
           </div>
-          <span className="page-badge">Page 6/6</span>
+          <div className="footer-col">
+            <span className="footer-col-title">TOUR ADVISOR</span>
+            <span className="footer-col-text">VISHAL CHAUHAN (DARJI)</span>
+            <span className="footer-col-text">Ph: 9328151481</span>
+            <span className="footer-col-text">mahadevholidays2000@gmail.com</span>
+          </div>
+          <span className="page-badge">Page {5 + (data.itinerary || []).length}/{totalPages}</span>
         </div>
       </div>
     </div>

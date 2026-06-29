@@ -49,7 +49,7 @@ const colors = {
 
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 85,          // Restored standard top margin
+    paddingTop: 105,          // Increased to clear larger header logo
     paddingBottom: 85,       // Room for the columns footer
     paddingHorizontal: 40,
     backgroundColor: colors.white,
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   logo: {
-    height: 52,              // Large prominent logo in header
+    height: 70,              // Made bigger prominent logo in header
     width: "auto",
   },
   footer: {
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
   },
   hotelImage: {
     width: "100%",           // Giant full-width hotel image
-    height: 140,
+    height: 180,             // Enlarged height to balance page layout
     borderRadius: 6,
     objectFit: "cover",
     borderWidth: 1.5,
@@ -356,31 +356,33 @@ const styles = StyleSheet.create({
   },
   // Pricing Card Block
   priceContainer: {
-    backgroundColor: colors.primary,
-    borderWidth: 2,
-    borderColor: colors.accent,
-    borderRadius: 8,
-    padding: "12 18",
+    backgroundColor: colors.accentLight, // Cream background
+    borderWidth: 3,                      // Thick border
+    borderColor: colors.accent,          // Gold
+    borderRadius: 10,
+    padding: "16 22",                    // Increased breathing room
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    marginBottom: 12,
+    justifyContent: "center",
+    marginBottom: 15,
   },
   priceMainRow: {
     display: "flex",
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "center",
     width: "100%",
   },
   priceLabel: {
-    fontSize: 11.5,
-    color: colors.white,
+    fontSize: 13,                        // Highlighted label size
+    color: colors.primary,               // Navy text color
     fontWeight: "bold",
   },
   priceTotal: {
-    fontSize: 18,            // Standalone large pricing
+    fontSize: 24,                        // Huge price text size
     fontWeight: "bold",
-    color: colors.accent,
+    color: colors.primary,               // Navy price color
   },
   // Vertical Itinerary Layout with HUGE centered photos (Page 3 & 4)
   itineraryBlock: {
@@ -425,7 +427,7 @@ const styles = StyleSheet.create({
   },
   itineraryBigImage: {
     width: "100%",           // Giant full-width daily photo
-    height: 140,
+    height: 200,             // Enlarged cinematic photo to eliminate empty page gaps
     borderRadius: 6,
     objectFit: "cover",
     borderWidth: 1.5,
@@ -702,6 +704,20 @@ interface ItineraryDay {
   stay: string;
   description: string;
   mealPlan: string;
+  image?: string;
+  transferBasis?: string;
+  customTransferBasis?: string;
+}
+
+interface HotelItem {
+  id: string;
+  hotelName: string;
+  hotelStar: string;
+  hotelRoomType: string;
+  hotelMealPlan: string;
+  hotelCheckIn: string;
+  hotelCheckOut: string;
+  hotelImage?: string;
 }
 
 interface PDFData {
@@ -713,15 +729,13 @@ interface PDFData {
   numPax: string;
   numRooms: string;
   vehicleType: string;
-  pickDrop: string;
+  transferBasis?: string;
+  customTransferBasis?: string;
+  pickupPoint: string;
+  dropPoint: string;
+  pickDrop?: string;
   mealPlan: string;
-  hotelStar: string;
   services: ServiceStatus;
-  hotelName: string;
-  hotelRoomType: string;
-  hotelMealPlan: string;
-  hotelCheckIn: string;
-  hotelCheckOut: string;
   pricePerPerson: string;
   totalPrice: string;
   gstExtra: boolean;
@@ -731,6 +745,9 @@ interface PDFData {
   paymentPolicies: string[];
   cancellationPolicies: string[];
   bookingTerms: string[];
+  coverImage?: string;
+  hotels: HotelItem[];
+  hotelLibrary?: HotelItem[];
 }
 
 const getAssetUrl = (path: string) => {
@@ -826,18 +843,93 @@ const VectorCross = ({ size = 12 }: { size?: number }) => (
   </Svg>
 );
 
+const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, data: PDFData) => {
+  const selectedBasis = (dayItem && dayItem.transferBasis) || data.transferBasis || "PRIVATE BASIS (PVT)";
+  const selectedCustom = (dayItem && dayItem.transferBasis) ? (dayItem.customTransferBasis || "") : (data.customTransferBasis || "");
+  
+  const basis = selectedBasis === "CUSTOM BASIS"
+    ? (selectedCustom || "Custom")
+    : selectedBasis;
+  
+  if (basis === "NONE") {
+    return `Cab: ${data.vehicleType}`;
+  }
+  
+  if (data.vehicleType === "No Transport (Direct Check-in)") {
+    return `Cab: ${basis}`;
+  }
+  return `Cab: ${data.vehicleType} (${basis})`;
+};
+
 export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
   const formattedArrival = formatPDFDate(data.arrivalDate);
-  const formattedCheckIn = formatDateTime(data.hotelCheckIn);
-  const formattedCheckOut = formatDateTime(data.hotelCheckOut);
-
-  // Split itinerary: Days 1-2 on Page 3, Days 3-4 on Page 4
-  const page3Days = (data.itinerary || []).filter(d => d.day <= 2);
-  const page4Days = (data.itinerary || []).filter(d => d.day > 2);
 
   return (
     <Document>
-      {/* PAGE 1: COVER & CLIENT OVERVIEW & SERVICES */}
+      {/* PAGE 1: DEDICATED LUXURY COVER PAGE */}
+      <Page size="A4" style={{ ...styles.page, paddingTop: 45, paddingBottom: 45 }}>
+        {/* Center Logo */}
+        <View style={{ display: "flex", flexDirection: "row", justifyContent: "center", marginBottom: 30 }}>
+          <Image src={getAssetUrl("/logo.jpg")} style={{ height: 90, width: "auto" }} />
+        </View>
+
+        {/* Large Cover Photo */}
+        <View style={{ ...styles.coverImageContainer, height: 330, marginBottom: 25 }}>
+          <Image src={data.coverImage || getAssetUrl("/goa.png")} style={styles.coverImage} />
+          <View style={styles.coverTitleOverlay}>
+            <Text style={{ ...styles.coverTitle, fontSize: 24 }}>{data.destination.toUpperCase()}</Text>
+            <Text style={styles.coverSubtitle}>PREMIUM TOUR PACKAGE</Text>
+          </View>
+        </View>
+
+        {/* Trip Summary Box */}
+        <View style={{ borderWidth: 2, borderColor: colors.accent, borderRadius: 8, padding: 18, backgroundColor: colors.accentLight, marginTop: 10 }}>
+          <Text style={{ fontSize: 12, fontWeight: "bold", color: colors.primary, marginBottom: 10, borderBottomWidth: 1.5, borderBottomColor: colors.accent, paddingBottom: 4 }}>
+            QUOTATION DETAILS
+          </Text>
+          
+          <View style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>PREPARED FOR :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{data.guestName}</Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>DURATION :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
+                {(data.durationNights ?? 0).toString().padStart(2, "0")} Nights / {(data.durationDays ?? 0).toString().padStart(2, "0")} Days
+              </Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>TRAVEL DATE :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{formattedArrival}</Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>TOTAL TRAVELERS :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{data.numPax}</Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: "bold" }}>ACCOMMODATION :</Text>
+              <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>{data.numRooms}</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Footer info */}
+        <View style={{ position: "absolute", bottom: 45, left: 40, right: 40, borderTopWidth: 1.5, borderTopColor: colors.accent, paddingTop: 10, display: "flex", flexDirection: "row", justifyContent: "space-between" }}>
+          <View style={{ display: "flex", flexDirection: "column" }}>
+            <Text style={{ fontSize: 8.5, fontWeight: "bold", color: colors.primary }}>MAHADEV HOLIDAYS</Text>
+            <Text style={{ fontSize: 7.5, color: colors.textMuted }}>Explore • Experience • Enjoy</Text>
+            <Text style={{ fontSize: 7.5, color: colors.textMuted }}>Estd: 2022</Text>
+          </View>
+          <View style={{ display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+            <Text style={{ fontSize: 8.5, fontWeight: "bold", color: colors.primary }}>TOUR ADVISOR: VISHAL CHAUHAN (DARJI)</Text>
+            <Text style={{ fontSize: 7.5, color: colors.textMuted }}>Ph: 9328151481</Text>
+            <Text style={{ fontSize: 7.5, color: colors.textMuted }}>Email: mahadevholidays2000@gmail.com</Text>
+          </View>
+        </View>
+      </Page>
+
+      {/* PAGE 2: CLIENT OVERVIEW & SERVICES CHECKLIST */}
       <Page size="A4" style={styles.page}>
         {/* Logo Header */}
         <View style={styles.header} fixed>
@@ -846,14 +938,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
         </View>
 
-        {/* Cover Photo */}
-        <View style={styles.coverImageContainer}>
-          <Image src={getAssetUrl("/goa.png")} style={styles.coverImage} />
-          <View style={styles.coverTitleOverlay}>
-            <Text style={styles.coverTitle}>{data.destination.toUpperCase()}</Text>
-            <Text style={styles.coverSubtitle}>PREMIUM QUOTATION</Text>
-          </View>
-        </View>
+        <Text style={styles.sectionHeader}>Welcome Greeting & Package Overview</Text>
 
         {/* Greeting */}
         <View style={styles.greetingSection}>
@@ -890,11 +975,17 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.gridRow}>
             <Text style={styles.gridHeaderCell}>Vehicle Type (Transfers)</Text>
-            <Text style={styles.gridValueCell}>{data.vehicleType}</Text>
+            <Text style={styles.gridValueCell}>
+              {getDayItineraryTransferText(null, data).replace("Cab: ", "")}
+            </Text>
           </View>
           <View style={styles.gridRow}>
-            <Text style={styles.gridHeaderCell}>Pick & Drop Point</Text>
-            <Text style={styles.gridValueCell}>{data.pickDrop}</Text>
+            <Text style={styles.gridHeaderCell}>Pickup Point</Text>
+            <Text style={styles.gridValueCell}>{data.pickupPoint || "Not Specified"}</Text>
+          </View>
+          <View style={styles.gridRow}>
+            <Text style={styles.gridHeaderCell}>Drop Point</Text>
+            <Text style={styles.gridValueCell}>{data.dropPoint || "Not Specified"}</Text>
           </View>
           <View style={styles.gridRow}>
             <Text style={styles.gridHeaderCell}>Meal Plan</Text>
@@ -902,7 +993,9 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.gridRowLast}>
             <Text style={styles.gridHeaderCell}>Hotel (Stay Category)</Text>
-            <Text style={styles.gridValueCell}>{data.hotelStar}</Text>
+            <Text style={styles.gridValueCell}>
+              {data.hotels ? data.hotels.map(h => h.hotelStar).filter((v, i, a) => a.indexOf(v) === i).join(", ") : ""}
+            </Text>
           </View>
         </View>
 
@@ -954,13 +1047,19 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
-            <Text style={styles.footerColText}>Estd: 2000</Text>
+            <Text style={styles.footerColText}>Estd: 2022</Text>
             <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>LEGAL INFO</Text>
             <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
             <Text style={styles.footerColText}>Government of India</Text>
+          </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>TOUR ADVISOR</Text>
+            <Text style={styles.footerColText}>VISHAL CHAUHAN (DARJI)</Text>
+            <Text style={styles.footerColText}>Ph: 9328151481</Text>
+            <Text style={styles.footerColText}>mahadevholidays2000@gmail.com</Text>
           </View>
           <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
         </View>
@@ -978,61 +1077,56 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
 
         {/* Pricing Panel - Placed FIRST on Page 2 */}
         <View style={styles.priceContainer}>
-          {data.pricePerPerson && (
-            <View style={styles.priceMainRow}>
-              <Text style={styles.priceLabel}>PRICE PER PERSON :</Text>
-              <Text style={styles.priceTotal}>Rs. {data.pricePerPerson}/-</Text>
-            </View>
-          )}
-          <View style={{ ...styles.priceMainRow, marginTop: 4 }}>
-            <Text style={{ ...styles.priceLabel, fontSize: 11 }}>TOTAL PACKAGE PRICE :</Text>
-            <Text style={{ ...styles.priceTotal, fontSize: 16 }}>Rs. {data.totalPrice}/-</Text>
+          <View style={styles.priceMainRow}>
+            <Text style={styles.priceLabel}>TOTAL PACKAGE PRICE :</Text>
+            <Text style={styles.priceTotal}>Rs. {data.totalPrice}/-</Text>
           </View>
-          {data.gstExtra && (
-            <Text style={{ fontSize: 9, color: colors.white, backgroundColor: colors.error, padding: "3 8", borderRadius: 4, marginTop: 6, fontWeight: "bold" }}>
-              + 5% GST EXTRA WILL BE CHARGED
-            </Text>
-          )}
         </View>
 
-        <Text style={styles.sectionHeader}>Hotel Stay Details (Stay Category)</Text>
+        <Text style={styles.sectionHeader}>Hotel Stay Details</Text>
 
-        {/* Hotel stay detailed card - Placed BELOW Pricing Card with HUGE stacked image */}
-        <View style={styles.hotelCard}>
-          <View style={styles.hotelInfo}>
-            <View style={styles.hotelNameRow}>
-              <Text style={styles.hotelName}>
-                <Link style={styles.hotelLink} src="https://www.google.com/search?q=Alvorada+Resort+Arpora+Goa">
-                  {data.hotelName}
-                </Link>
-              </Text>
-              <View style={styles.hotelStarsWrapper}>
-                {renderStars(data.hotelStar)}
+        {/* Hotel stay detailed cards */}
+        {data.hotels && data.hotels.map((hotel, idx) => {
+          const hotelCheckInFormatted = formatDateTime(hotel.hotelCheckIn);
+          const hotelCheckOutFormatted = formatDateTime(hotel.hotelCheckOut);
+          return (
+            <View key={idx} style={styles.hotelCard} wrap={false}>
+              <View style={styles.hotelInfo}>
+                <View style={styles.hotelNameRow}>
+                  <Text style={styles.hotelName}>
+                    <Link style={styles.hotelLink} src={`https://www.google.com/search?q=${encodeURIComponent(hotel.hotelName)}`}>
+                      {hotel.hotelName}
+                    </Link>
+                  </Text>
+                  <View style={styles.hotelStarsWrapper}>
+                    {renderStars(hotel.hotelStar)}
+                  </View>
+                </View>
+              </View>
+              
+              <Image src={hotel.hotelImage || getAssetUrl("/hotel.png")} style={styles.hotelImage} />
+
+              <View style={styles.hotelDetailGrid}>
+                <View style={styles.hotelDetailCol}>
+                  <Text style={styles.hotelDetailLabel}>Room Type:</Text>
+                  <Text style={styles.hotelDetailValue}>{hotel.hotelRoomType}</Text>
+                </View>
+                <View style={styles.hotelDetailCol}>
+                  <Text style={styles.hotelDetailLabel}>Meal Plan:</Text>
+                  <Text style={styles.hotelDetailValue}>{hotel.hotelMealPlan}</Text>
+                </View>
+                <View style={styles.hotelDetailCol}>
+                  <Text style={styles.hotelDetailLabel}>Check-in:</Text>
+                  <Text style={styles.hotelDetailValue}>{hotelCheckInFormatted}</Text>
+                </View>
+                <View style={styles.hotelDetailCol}>
+                  <Text style={styles.hotelDetailLabel}>Check-out:</Text>
+                  <Text style={styles.hotelDetailValue}>{hotelCheckOutFormatted}</Text>
+                </View>
               </View>
             </View>
-          </View>
-          
-          <Image src={getAssetUrl("/hotel.png")} style={styles.hotelImage} />
-
-          <View style={styles.hotelDetailGrid}>
-            <View style={styles.hotelDetailCol}>
-              <Text style={styles.hotelDetailLabel}>Room Type:</Text>
-              <Text style={styles.hotelDetailValue}>{data.hotelRoomType}</Text>
-            </View>
-            <View style={styles.hotelDetailCol}>
-              <Text style={styles.hotelDetailLabel}>Meal Plan:</Text>
-              <Text style={styles.hotelDetailValue}>{data.hotelMealPlan}</Text>
-            </View>
-            <View style={styles.hotelDetailCol}>
-              <Text style={styles.hotelDetailLabel}>Check-in:</Text>
-              <Text style={styles.hotelDetailValue}>{formattedCheckIn}</Text>
-            </View>
-            <View style={styles.hotelDetailCol}>
-              <Text style={styles.hotelDetailLabel}>Check-out:</Text>
-              <Text style={styles.hotelDetailValue}>{formattedCheckOut}</Text>
-            </View>
-          </View>
-        </View>
+          );
+        })}
 
         {/* Footer with Columns Layout (GSTIN removed) */}
         <View style={styles.footer} fixed>
@@ -1041,7 +1135,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
-            <Text style={styles.footerColText}>Estd: 2000</Text>
+            <Text style={styles.footerColText}>Estd: 2022</Text>
             <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
           </View>
           <View style={styles.footerCol}>
@@ -1049,109 +1143,71 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
             <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
             <Text style={styles.footerColText}>Government of India</Text>
           </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>TOUR ADVISOR</Text>
+            <Text style={styles.footerColText}>VISHAL CHAUHAN (DARJI)</Text>
+            <Text style={styles.footerColText}>Ph: 9328151481</Text>
+            <Text style={styles.footerColText}>mahadevholidays2000@gmail.com</Text>
+          </View>
           <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
         </View>
       </Page>
 
-      {/* PAGE 3: DETAILED DAILY TIMELINE (DAYS 1 & 2 - GIANT VERTICAL PHOTOS) */}
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header} fixed>
-          <View style={styles.headerMain}>
-            <Image src={getAssetUrl("/logo.jpg")} style={styles.logo} />
+      {/* DETAILED DAILY TIMELINE (ONE PAGE PER DAY) */}
+      {(data.itinerary || []).map((item, idx) => (
+        <Page key={idx} size="A4" style={styles.page}>
+          <View style={styles.header} fixed>
+            <View style={styles.headerMain}>
+              <Image src={getAssetUrl("/logo.jpg")} style={styles.logo} />
+            </View>
           </View>
-        </View>
 
-        <Text style={styles.sectionHeader}>Tour Itinerary Details (Day 1 & Day 2)</Text>
+          <Text style={styles.sectionHeader}>Tour Itinerary Details (Day {item.day})</Text>
 
-        <View style={styles.itineraryBlock}>
-          {page3Days.map((item, idx) => (
-            <View key={idx} style={styles.itineraryDayCard}>
+          <View style={styles.itineraryBlock}>
+            <View style={styles.itineraryDayCard}>
               <View style={styles.itineraryDayHeader}>
                 <Text style={styles.itineraryDayTitle}>Day {item.day}: {item.title}</Text>
                 {item.stay && <Text style={styles.itineraryDayStay}>Stay: {item.stay}</Text>}
               </View>
               {/* Daily big photo block */}
-              <Image src={getDayImage(item.day)} style={styles.itineraryBigImage} />
+              <Image src={item.image || getDayImage(item.day)} style={styles.itineraryBigImage} />
               <Text style={styles.itineraryDayDesc}>{item.description}</Text>
               
               <View style={styles.itineraryMetaRow}>
-                {item.mealPlan && <Text style={styles.itineraryDayMeal}>Meals Included: (B) {item.mealPlan}</Text>}
+                {item.mealPlan && <Text style={styles.itineraryDayMeal}>Meals: {item.mealPlan}</Text>}
                 <Text style={styles.itineraryBadgeGreen}>
-                  {item.day === 4 ? "Departure Transfer" : item.day === 1 ? "Private Transfer" : "Sightseeing Transfer"}
+                  {getDayItineraryTransferText(item, data)}
                 </Text>
               </View>
             </View>
-          ))}
-        </View>
-
-        {/* Footer with Columns Layout (GSTIN removed) */}
-        <View style={styles.footer} fixed>
-          <View style={styles.footerLeft}>
-            <Image src={getAssetUrl("/logo.jpg")} style={styles.footerLogo} />
           </View>
-          <View style={styles.footerCol}>
-            <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
-            <Text style={styles.footerColText}>Estd: 2000</Text>
-            <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
-          </View>
-          <View style={styles.footerCol}>
-            <Text style={styles.footerColTitle}>LEGAL INFO</Text>
-            <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
-            <Text style={styles.footerColText}>Government of India</Text>
-          </View>
-          <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
-        </View>
-      </Page>
 
-      {/* PAGE 4: DETAILED DAILY TIMELINE (DAYS 3 & 4 - GIANT VERTICAL PHOTOS) */}
-      <Page size="A4" style={styles.page}>
-        <View style={styles.header} fixed>
-          <View style={styles.headerMain}>
-            <Image src={getAssetUrl("/logo.jpg")} style={styles.logo} />
-          </View>
-        </View>
-
-        <Text style={styles.sectionHeader}>Tour Itinerary Details (Day 3 & Day 4)</Text>
-
-        <View style={styles.itineraryBlock}>
-          {page4Days.map((item, idx) => (
-            <View key={idx} style={styles.itineraryDayCard}>
-              <View style={styles.itineraryDayHeader}>
-                <Text style={styles.itineraryDayTitle}>Day {item.day}: {item.title}</Text>
-                {item.stay && <Text style={styles.itineraryDayStay}>Stay: {item.stay}</Text>}
-              </View>
-              {/* Daily big photo block */}
-              <Image src={getDayImage(item.day)} style={styles.itineraryBigImage} />
-              <Text style={styles.itineraryDayDesc}>{item.description}</Text>
-              
-              <View style={styles.itineraryMetaRow}>
-                {item.mealPlan && <Text style={styles.itineraryDayMeal}>Meals Included: (B) {item.mealPlan}</Text>}
-                <Text style={styles.itineraryBadgeGreen}>
-                  {item.day === 4 ? "Departure Transfer" : item.day === 1 ? "Private Transfer" : "Sightseeing Transfer"}
-                </Text>
-              </View>
+          {/* Footer with Columns Layout (GSTIN removed) */}
+          <View style={styles.footer} fixed>
+            <View style={styles.footerLeft}>
+              <Image src={getAssetUrl("/logo.jpg")} style={styles.footerLogo} />
             </View>
-          ))}
-        </View>
-
-        {/* Footer with Columns Layout (GSTIN removed) */}
-        <View style={styles.footer} fixed>
-          <View style={styles.footerLeft}>
-            <Image src={getAssetUrl("/logo.jpg")} style={styles.footerLogo} />
+            <View style={styles.footerCol}>
+              <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
+              <Text style={styles.footerColText}>Estd: 2022</Text>
+              <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
+            </View>
+            <View style={styles.footerCol}>
+              <Text style={styles.footerColTitle}>LEGAL INFO</Text>
+              <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
+              <Text style={styles.footerColText}>Government of India</Text>
+            </View>
+            <View style={styles.footerCol}>
+              <Text style={styles.footerColTitle}>TOUR ADVISOR</Text>
+              <Text style={styles.footerColText}>VISHAL CHAUHAN (DARJI)</Text>
+              <Text style={styles.footerColText}>Ph: 9328151481</Text>
+              <Text style={styles.footerColText}>mahadevholidays2000@gmail.com</Text>
+            </View>
+            <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
           </View>
-          <View style={styles.footerCol}>
-            <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
-            <Text style={styles.footerColText}>Estd: 2000</Text>
-            <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
-          </View>
-          <View style={styles.footerCol}>
-            <Text style={styles.footerColTitle}>LEGAL INFO</Text>
-            <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
-            <Text style={styles.footerColText}>Government of India</Text>
-          </View>
-          <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
-        </View>
-      </Page>
+        </Page>
+      ))}
 
       {/* PAGE 5: TERMS & POLICIES (INCLUSIONS, EXCLUSIONS, PAYMENTS, CANCELLATIONS) */}
       <Page size="A4" style={styles.page}>
@@ -1238,13 +1294,19 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
-            <Text style={styles.footerColText}>Estd: 2000</Text>
+            <Text style={styles.footerColText}>Estd: 2022</Text>
             <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>LEGAL INFO</Text>
             <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
             <Text style={styles.footerColText}>Government of India</Text>
+          </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>TOUR ADVISOR</Text>
+            <Text style={styles.footerColText}>VISHAL CHAUHAN (DARJI)</Text>
+            <Text style={styles.footerColText}>Ph: 9328151481</Text>
+            <Text style={styles.footerColText}>mahadevholidays2000@gmail.com</Text>
           </View>
           <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
         </View>
@@ -1322,6 +1384,23 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
         </View>
 
+        {/* Tour Advisor Details Card on Last Page */}
+        <View style={{ marginTop: 15, padding: 12, backgroundColor: colors.accentLight, borderWidth: 1.5, borderColor: colors.accent, borderRadius: 6, alignItems: "center" }}>
+          <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary, marginBottom: 4, letterSpacing: 0.5 }}>
+            YOUR TOUR ADVISOR
+          </Text>
+          <Text style={{ fontSize: 11, fontWeight: "bold", color: colors.secondary, marginBottom: 2 }}>
+            VISHAL CHAUHAN (DARJI)
+          </Text>
+          <Text style={{ fontSize: 9.5, color: colors.primary, fontWeight: "bold" }}>
+            Phone: +91 9328151481   |   Email: mahadevholidays2000@gmail.com
+          </Text>
+        </View>
+
+        <View style={{ alignItems: "center", marginTop: 15 }}>
+          <Image src={getAssetUrl("/logo.jpg")} style={{ height: 80, width: "auto" }} />
+        </View>
+
         {/* Footer with Columns Layout (GSTIN removed) */}
         <View style={styles.footer} fixed>
           <View style={styles.footerLeft}>
@@ -1329,13 +1408,19 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
-            <Text style={styles.footerColText}>Estd: 2000</Text>
+            <Text style={styles.footerColText}>Estd: 2022</Text>
             <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
           </View>
           <View style={styles.footerCol}>
             <Text style={styles.footerColTitle}>LEGAL INFO</Text>
             <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
             <Text style={styles.footerColText}>Government of India</Text>
+          </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>TOUR ADVISOR</Text>
+            <Text style={styles.footerColText}>VISHAL CHAUHAN (DARJI)</Text>
+            <Text style={styles.footerColText}>Ph: 9328151481</Text>
+            <Text style={styles.footerColText}>mahadevholidays2000@gmail.com</Text>
           </View>
           <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
         </View>

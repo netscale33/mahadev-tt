@@ -2,21 +2,26 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { PackageForm } from "./PackageForm";
+import { PackageForm, PDFData, HotelItem } from "./PackageForm";
 import { PDFPreview } from "./PDFPreview";
-import { Download, Edit3, Eye } from "lucide-react";
+import { Download, Edit3, Eye, Menu, Plus, Trash2, X } from "lucide-react";
+import { loadDestinations, saveDestinations } from "./db";
+import { getPrepopulatedHotels } from "./hotelLookup";
 
 // Default Goa data pre-populated from the user's Goa PDF
-const defaultGoaData = {
-  guestName: "Mahadev Tour & Travels ( Vishal )",
+const defaultGoaData: PDFData = {
+  guestName: "Name of Client",
   destination: "Goa",
   arrivalDate: "2026-08-09", // Standard date format for HTML5 calendar
   durationNights: 3,
   durationDays: 4,
   numPax: "5 Adults",
   numRooms: "2 Rooms",
-  vehicleType: "AC Sedan (Ertiga / SUV)",
-  pickDrop: "Thivim Railway Station / Madgaon Station",
+  vehicleType: "SEDAN CAB (AC CAR)",
+  transferBasis: "PRIVATE BASIS (PVT)",
+  customTransferBasis: "",
+  pickupPoint: "Thivim Railway Station",
+  dropPoint: "Madgaon Station",
   mealPlan: "CP (Breakfast Only)",
   hotelStar: "3 Star (Deluxe)",
   services: {
@@ -27,14 +32,33 @@ const defaultGoaData = {
     cruise: true,
     addons: false,
   },
-  hotelName: "Alvorada Resort (Arpora)",
-  hotelRoomType: "Super Deluxe Room Pool View",
-  hotelMealPlan: "Breakfast Only (CP)",
-  hotelCheckIn: "2026-08-09T14:00",
-  hotelCheckOut: "2026-08-12T12:00",
-  pricePerPerson: "6860",
+  hotels: [
+    {
+      id: "hotel-default",
+      hotelName: "Alvorada Resort (Arpora)",
+      hotelStar: "3 Star (Deluxe)",
+      hotelRoomType: "Super Deluxe Room Pool View",
+      hotelMealPlan: "Breakfast Only (CP)",
+      hotelCheckIn: "2026-08-09T14:00",
+      hotelCheckOut: "2026-08-12T12:00",
+      hotelImage: "",
+    }
+  ],
+  hotelLibrary: [
+    {
+      id: "hotel-default",
+      hotelName: "Alvorada Resort (Arpora)",
+      hotelStar: "3 Star (Deluxe)",
+      hotelRoomType: "Super Deluxe Room Pool View",
+      hotelMealPlan: "Breakfast Only (CP)",
+      hotelCheckIn: "2026-08-09T14:00",
+      hotelCheckOut: "2026-08-12T12:00",
+      hotelImage: "",
+    }
+  ],
+  pricePerPerson: "",
   totalPrice: "34300",
-  gstExtra: true,
+  gstExtra: false,
   itinerary: [
     {
       day: 1,
@@ -109,12 +133,110 @@ const calculateCheckOutDate = (arrivalDateStr: string, nights: number) => {
   return `${yyyy}-${mm}-${dd}`;
 };
 
+const PRELOADED_DESTINATIONS = [
+  "Nainital",
+  "Srinagar",
+  "Gulmarg",
+  "Pahalgam",
+  "Sonamarg",
+  "Ladakh",
+  "Jaisalmer",
+  "Haridwar",
+  "Nepal",
+  "Kerala"
+];
+
+const generateDefaultDestination = (name: string, id: string): PDFData => {
+  const dest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
+  dest.id = id;
+  dest.destination = name;
+  dest.guestName = "Name of Client";
+  dest.arrivalDate = new Date().toISOString().split('T')[0];
+  dest.pickupPoint = "";
+  dest.dropPoint = "";
+  delete dest.pickDrop;
+  dest.vehicleType = "SEDAN CAB (AC CAR)";
+  dest.transferBasis = "PRIVATE BASIS (PVT)";
+  dest.customTransferBasis = "";
+  dest.coverImage = "";
+  
+  const prefilled = getPrepopulatedHotels(name);
+  if (prefilled && prefilled.length > 0) {
+    dest.hotelLibrary = prefilled;
+    const firstLib = prefilled[0];
+    dest.hotels = [
+      {
+        id: `hotel-${Date.now()}-${Math.random()}`,
+        hotelName: firstLib.hotelName,
+        hotelStar: firstLib.hotelStar,
+        hotelRoomType: firstLib.hotelRoomType,
+        hotelMealPlan: firstLib.hotelMealPlan,
+        hotelCheckIn: `${dest.arrivalDate}T14:00`,
+        hotelCheckOut: `${calculateCheckOutDate(dest.arrivalDate, 3)}T12:00`,
+        hotelImage: firstLib.hotelImage,
+      }
+    ];
+    dest.itinerary = [
+      {
+        day: 1,
+        title: "Arrival & Transfer to Hotel",
+        stay: firstLib.hotelName,
+        mealPlan: "No Meals (EP)",
+        description: `Arrive at ${name}. Our driver will pick you up and transfer you to the hotel/resort. Enjoy the rest of the day at leisure.`,
+        image: "",
+      }
+    ];
+  } else {
+    const defaultHotel = {
+      id: `hotel-${Date.now()}`,
+      hotelName: "Standard Deluxe Stay",
+      hotelStar: "3 Star (Deluxe)",
+      hotelRoomType: "Standard Room",
+      hotelMealPlan: "Breakfast Only (CP)",
+      hotelCheckIn: `${dest.arrivalDate}T14:00`,
+      hotelCheckOut: `${calculateCheckOutDate(dest.arrivalDate, 3)}T12:00`,
+      hotelImage: "",
+    };
+    dest.hotels = [defaultHotel];
+    dest.hotelLibrary = [{ ...defaultHotel, id: `lib-hotel-${Date.now()}` }];
+    dest.itinerary = [
+      {
+        day: 1,
+        title: "Arrival & Transfer to Hotel",
+        stay: "Standard Deluxe Stay",
+        mealPlan: "No Meals (EP)",
+        description: `Arrive at ${name}. Our driver will pick you up and transfer you to the hotel/resort. Enjoy the rest of the day at leisure.`,
+        image: "",
+      }
+    ];
+  }
+  // Customize inclusions for this specific destination
+  dest.inclusions = [
+    `3 Nights accommodation in selected hotel (${name})`,
+    "Daily buffet breakfast at hotel (CP plan)",
+    "Private pickup from airport or railway station",
+    "Private drop to airport or railway station",
+    `Local sightseeing at ${name} in private AC vehicle`,
+    "All taxes, tolls, parking, driver batta, and fuel charges included",
+  ];
+  return dest;
+};
+
 export default function TravelPortal() {
-  const [formData, setFormData] = useState<typeof defaultGoaData>(defaultGoaData);
+  const [destinations, setDestinations] = useState<PDFData[]>([]);
+  const [activeIndex, setActiveIndex] = useState(0);
   const [formStep, setFormStep] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfLibrary, setPdfLibrary] = useState<any>(null);
+
+  // Sidebar and Modals state
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newDestName, setNewDestName] = useState("");
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [renameIndex, setRenameIndex] = useState(-1);
+  const [renameName, setRenameName] = useState("");
 
   // Responsive state
   const [isMobile, setIsMobile] = useState(false);
@@ -125,21 +247,331 @@ export default function TravelPortal() {
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Load @react-pdf/renderer dynamically on client-side
+  // Load @react-pdf/renderer and local data dynamically on client-side
   useEffect(() => {
     setIsMounted(true);
+    
+    // Load destinations from IndexedDB (with localStorage fallback)
+    async function initData() {
+      try {
+        const saved = await loadDestinations();
+        if (saved && saved.length > 0) {
+          // Make sure each destination has a hotelLibrary array and separated pickup/drop points
+          const migrated = saved.map((dest: any) => {
+            const prefilled = getPrepopulatedHotels(dest.destination);
+            if (!dest.hotelLibrary || dest.hotelLibrary.length <= 1) {
+              if (prefilled && prefilled.length > 0) {
+                dest.hotelLibrary = prefilled;
+              } else {
+                dest.hotelLibrary = (dest.hotels || []).map((h: any) => ({
+                  ...h,
+                  id: `lib-${h.id || Date.now()}-${Math.random()}`
+                }));
+              }
+            } else if (dest.destination.toLowerCase().includes("goa") && dest.hotelLibrary.length <= 2) {
+              if (prefilled && prefilled.length > 0) {
+                dest.hotelLibrary = prefilled;
+              }
+            }
+            if (!dest.pickupPoint || !dest.dropPoint) {
+              const str = dest.pickDrop || "";
+              if (str.includes(" / ")) {
+                const parts = str.split(" / ");
+                dest.pickupPoint = parts[0]?.trim() || "";
+                dest.dropPoint = parts[1]?.trim() || "";
+              } else if (str.includes("/")) {
+                const parts = str.split("/");
+                dest.pickupPoint = parts[0]?.trim() || "";
+                dest.dropPoint = parts[1]?.trim() || "";
+              } else {
+                dest.pickupPoint = str;
+                dest.dropPoint = str;
+              }
+            }
+            if (!dest.transferBasis) {
+              dest.transferBasis = "PRIVATE BASIS (PVT)";
+            }
+            if (dest.customTransferBasis === undefined) {
+              dest.customTransferBasis = "";
+            }
+            // Pre-populate terms & policies if missing or empty
+            if (!dest.inclusions || dest.inclusions.length === 0) {
+              dest.inclusions = [
+                `3 Nights accommodation in selected hotel (${dest.destination})`,
+                "Daily buffet breakfast at hotel (CP plan)",
+                "Private pickup from airport or railway station",
+                "Private drop to airport or railway station",
+                `Local sightseeing at ${dest.destination} in private AC vehicle`,
+                "All taxes, tolls, parking, driver batta, and fuel charges included",
+              ];
+            }
+            if (!dest.exclusions || dest.exclusions.length === 0) {
+              dest.exclusions = [...defaultGoaData.exclusions];
+            }
+            if (!dest.paymentPolicies || dest.paymentPolicies.length === 0) {
+              dest.paymentPolicies = [...defaultGoaData.paymentPolicies];
+            }
+            if (!dest.cancellationPolicies || dest.cancellationPolicies.length === 0) {
+              dest.cancellationPolicies = [...defaultGoaData.cancellationPolicies];
+            }
+            if (!dest.bookingTerms || dest.bookingTerms.length === 0) {
+              dest.bookingTerms = [...defaultGoaData.bookingTerms];
+            }
+            return dest;
+          });
+
+          // Merge missing preloaded destinations into list
+          const existingNames = migrated.map((d: any) => d.destination.toLowerCase());
+          const newItems: PDFData[] = [];
+          PRELOADED_DESTINATIONS.forEach((name) => {
+            if (!existingNames.some((en: string) => en.includes(name.toLowerCase()) || name.toLowerCase().includes(en))) {
+              newItems.push(generateDefaultDestination(name, `preloaded-${name.toLowerCase()}-${Date.now()}-${Math.random()}`));
+            }
+          });
+          const merged = [...migrated, ...newItems];
+          setDestinations(merged);
+          await saveDestinations(merged);
+        } else {
+          // Check for legacy localStorage data
+          const legacySaved = localStorage.getItem("mahadev_destinations_v1");
+          if (legacySaved) {
+            const parsed = JSON.parse(legacySaved);
+            const migrated = parsed.map((dest: any) => {
+              if (!dest.hotels) {
+                dest.hotels = [
+                  {
+                    id: `hotel-${Date.now()}-${Math.random()}`,
+                    hotelName: dest.hotelName || "Alvorada Resort (Arpora)",
+                    hotelStar: dest.hotelStar || "3 Star (Deluxe)",
+                    hotelRoomType: dest.hotelRoomType || "Super Deluxe Room Pool View",
+                    hotelMealPlan: dest.hotelMealPlan || "Breakfast Only (CP)",
+                    hotelCheckIn: dest.hotelCheckIn || "2026-08-09T14:00",
+                    hotelCheckOut: dest.hotelCheckOut || "2026-08-12T12:00",
+                    hotelImage: dest.hotelImage || "",
+                  }
+                ];
+                delete dest.hotelName;
+                delete dest.hotelStar;
+                delete dest.hotelRoomType;
+                delete dest.hotelMealPlan;
+                delete dest.hotelCheckIn;
+                delete dest.hotelCheckOut;
+                delete dest.hotelImage;
+              }
+              const prefilled = getPrepopulatedHotels(dest.destination);
+              if (!dest.hotelLibrary || dest.hotelLibrary.length <= 1) {
+                if (prefilled && prefilled.length > 0) {
+                  dest.hotelLibrary = prefilled;
+                } else {
+                  dest.hotelLibrary = dest.hotels.map((h: any) => ({
+                    ...h,
+                    id: `lib-${h.id || Date.now()}-${Math.random()}`
+                  }));
+                }
+              } else if (dest.destination.toLowerCase().includes("goa") && dest.hotelLibrary.length <= 2) {
+                if (prefilled && prefilled.length > 0) {
+                  dest.hotelLibrary = prefilled;
+                }
+              }
+              if (!dest.pickupPoint || !dest.dropPoint) {
+                const str = dest.pickDrop || "";
+                if (str.includes(" / ")) {
+                  const parts = str.split(" / ");
+                  dest.pickupPoint = parts[0]?.trim() || "";
+                  dest.dropPoint = parts[1]?.trim() || "";
+                } else if (str.includes("/")) {
+                  const parts = str.split("/");
+                  dest.pickupPoint = parts[0]?.trim() || "";
+                  dest.dropPoint = parts[1]?.trim() || "";
+                } else {
+                  dest.pickupPoint = str;
+                  dest.dropPoint = str;
+                }
+              }
+              if (!dest.transferBasis) {
+                dest.transferBasis = "PRIVATE BASIS (PVT)";
+              }
+              if (dest.customTransferBasis === undefined) {
+                dest.customTransferBasis = "";
+              }
+              // Pre-populate terms & policies if missing or empty
+              if (!dest.inclusions || dest.inclusions.length === 0) {
+                dest.inclusions = [
+                  `3 Nights accommodation in selected hotel (${dest.destination})`,
+                  "Daily buffet breakfast at hotel (CP plan)",
+                  "Private pickup from airport or railway station",
+                  "Private drop to airport or railway station",
+                  `Local sightseeing at ${dest.destination} in private AC vehicle`,
+                  "All taxes, tolls, parking, driver batta, and fuel charges included",
+                ];
+              }
+              if (!dest.exclusions || dest.exclusions.length === 0) {
+                dest.exclusions = [...defaultGoaData.exclusions];
+              }
+              if (!dest.paymentPolicies || dest.paymentPolicies.length === 0) {
+                dest.paymentPolicies = [...defaultGoaData.paymentPolicies];
+              }
+              if (!dest.cancellationPolicies || dest.cancellationPolicies.length === 0) {
+                dest.cancellationPolicies = [...defaultGoaData.cancellationPolicies];
+              }
+              if (!dest.bookingTerms || dest.bookingTerms.length === 0) {
+                dest.bookingTerms = [...defaultGoaData.bookingTerms];
+              }
+              return dest;
+            });
+
+            // Merge missing preloaded destinations into legacy list
+            const existingNames = migrated.map((d: any) => d.destination.toLowerCase());
+            const newItems: PDFData[] = [];
+            PRELOADED_DESTINATIONS.forEach((name) => {
+              if (!existingNames.some((en: string) => en.includes(name.toLowerCase()) || name.toLowerCase().includes(en))) {
+                newItems.push(generateDefaultDestination(name, `preloaded-${name.toLowerCase()}-${Date.now()}-${Math.random()}`));
+              }
+            });
+            const merged = [...migrated, ...newItems];
+            setDestinations(merged);
+            await saveDestinations(merged);
+            localStorage.removeItem("mahadev_destinations_v1"); // Cleanup legacy
+          } else {
+            const defaultList = [
+              { ...defaultGoaData, id: "goa-default", isDefault: true },
+              ...PRELOADED_DESTINATIONS.map((name, i) => 
+                generateDefaultDestination(name, `preloaded-${name.toLowerCase()}-${Date.now()}-${i}`)
+              )
+            ];
+            setDestinations(defaultList);
+            await saveDestinations(defaultList);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to initialize destinations from storage:", e);
+        const defaultList = [
+          { ...defaultGoaData, id: "goa-default", isDefault: true },
+          ...PRELOADED_DESTINATIONS.map((name, i) => 
+            generateDefaultDestination(name, `preloaded-${name.toLowerCase()}-${Date.now()}-${i}`)
+          )
+        ];
+        setDestinations(defaultList);
+        await saveDestinations(defaultList);
+      }
+    }
+    initData();
+
     import("@react-pdf/renderer").then((mod) => {
       setPdfLibrary(mod);
     });
 
     // Check screen size
     const checkScreenSize = () => {
-      setIsMobile(window.innerWidth <= 1024);
+      const mobile = window.innerWidth <= 1024;
+      setIsMobile(mobile);
+      setIsSidebarOpen(!mobile);
     };
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
+
+  const formData = destinations[activeIndex] || defaultGoaData;
+
+  const handleAddDestination = () => {
+    if (!newDestName.trim()) return;
+    const newDest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
+    newDest.id = `dest-${Date.now()}`;
+    newDest.destination = newDestName.trim();
+    newDest.guestName = "Name of Client";
+    newDest.arrivalDate = new Date().toISOString().split('T')[0];
+    newDest.pickupPoint = "";
+    newDest.dropPoint = "";
+    delete newDest.pickDrop;
+    newDest.vehicleType = "SEDAN CAB (AC CAR)";
+    newDest.coverImage = "";
+    const defaultHotel = {
+      id: `hotel-${Date.now()}`,
+      hotelName: "Standard Deluxe Stay",
+      hotelStar: "3 Star (Deluxe)",
+      hotelRoomType: "Standard Room",
+      hotelMealPlan: "Breakfast Only (CP)",
+      hotelCheckIn: `${new Date().toISOString().split('T')[0]}T14:00`,
+      hotelCheckOut: `${calculateCheckOutDate(new Date().toISOString().split('T')[0], 3)}T12:00`,
+      hotelImage: "",
+    };
+    newDest.hotels = [defaultHotel];
+    
+    // Attempt to pre-populate database from hotelLookup
+    const prefilled = getPrepopulatedHotels(newDest.destination);
+    if (prefilled && prefilled.length > 0) {
+      newDest.hotelLibrary = prefilled;
+      const firstLib = prefilled[0];
+      newDest.hotels[0] = {
+        ...newDest.hotels[0],
+        hotelName: firstLib.hotelName,
+        hotelStar: firstLib.hotelStar,
+        hotelRoomType: firstLib.hotelRoomType,
+        hotelMealPlan: firstLib.hotelMealPlan,
+        hotelImage: firstLib.hotelImage,
+      };
+      newDest.itinerary = [
+        {
+          day: 1,
+          title: "Arrival & Transfer to Hotel",
+          stay: firstLib.hotelName,
+          mealPlan: "No Meals (EP)",
+          description: "Arrive at destination. Our driver will pick you up and transfer you to the hotel/resort. Enjoy the rest of the day at leisure.",
+          image: "",
+        }
+      ];
+    } else {
+      newDest.hotelLibrary = [{ ...defaultHotel, id: `lib-hotel-${Date.now()}` }];
+      newDest.itinerary = [
+        {
+          day: 1,
+          title: "Arrival & Transfer to Hotel",
+          stay: "Standard Deluxe Stay",
+          mealPlan: "No Meals (EP)",
+          description: "Arrive at destination. Our driver will pick you up and transfer you to the hotel/resort. Enjoy the rest of the day at leisure.",
+          image: "",
+        }
+      ];
+    }
+    
+    const updated = [...destinations, newDest];
+    setDestinations(updated);
+    saveDestinations(updated).catch(err => console.error("Failed to save destination to IndexedDB:", err));
+    setActiveIndex(updated.length - 1);
+    setNewDestName("");
+    setShowAddModal(false);
+  };
+
+  const handleDeleteDestination = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const dest = destinations[index];
+    if (dest?.isDefault) {
+      alert("The default template destination cannot be deleted.");
+      return;
+    }
+    if (confirm(`Are you sure you want to delete "${dest.destination}"?`)) {
+      const updated = destinations.filter((_, idx) => idx !== index);
+      setDestinations(updated);
+      saveDestinations(updated).catch(err => console.error("Failed to save destinations to IndexedDB:", err));
+      if (activeIndex >= updated.length) {
+        setActiveIndex(Math.max(0, updated.length - 1));
+      } else if (activeIndex === index) {
+        setActiveIndex(0);
+      }
+    }
+  };
+
+  const handleRenameDestination = () => {
+    if (!renameName.trim() || renameIndex === -1) return;
+    const updated = [...destinations];
+    updated[renameIndex].destination = renameName.trim();
+    setDestinations(updated);
+    saveDestinations(updated).catch(err => console.error("Failed to save destinations to IndexedDB:", err));
+    setShowRenameModal(false);
+    setRenameIndex(-1);
+    setRenameName("");
+  };
 
   // Mouse Move resize handler
   useEffect(() => {
@@ -181,7 +613,7 @@ export default function TravelPortal() {
   };
 
   // Update check-in, check-out dates and itinerary when arrivalDate changes
-  const handleDataChange = (newData: typeof defaultGoaData) => {
+  const handleDataChange = (newData: PDFData) => {
     const prevArrival = formData.arrivalDate;
     const newArrival = newData.arrivalDate;
     const nights = newData.durationNights;
@@ -190,16 +622,21 @@ export default function TravelPortal() {
     if (newArrival !== prevArrival && newArrival.includes("-")) {
       const checkoutDateStr = calculateCheckOutDate(newArrival, nights);
       
-      newData.hotelCheckIn = `${newArrival}T14:00`;
-      newData.hotelCheckOut = `${checkoutDateStr}T12:00`;
+      if (newData.hotels && newData.hotels[0]) {
+        newData.hotels[0].hotelCheckIn = `${newArrival}T14:00`;
+        newData.hotels[0].hotelCheckOut = `${checkoutDateStr}T12:00`;
+      }
       
       // Update check-in date inside Day 1 hotel stay if present
-      if (newData.itinerary[0]) {
-        newData.itinerary[0].stay = newData.hotelName;
+      if (newData.itinerary[0] && newData.hotels && newData.hotels[0]) {
+        newData.itinerary[0].stay = newData.hotels[0].hotelName;
       }
     }
 
-    setFormData(newData);
+    const updated = [...destinations];
+    updated[activeIndex] = newData;
+    setDestinations(updated);
+    saveDestinations(updated).catch(err => console.error("Failed to save destinations to IndexedDB:", err));
   };
 
   const handleDownloadPDF = async () => {
@@ -216,7 +653,8 @@ export default function TravelPortal() {
       link.href = url;
       
       const sanitizedName = formData.guestName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-      link.download = `Mahadev_Holidays_Goa_${sanitizedName}.pdf`;
+      const sanitizedDest = formData.destination.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      link.download = `Mahadev_Holidays_${sanitizedDest}_${sanitizedName}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -295,19 +733,33 @@ export default function TravelPortal() {
           {/* Top Workspace Bar */}
           <div className="workspace-header-bar">
             <div className="workspace-title-info">
+              <button 
+                className="btn btn-secondary btn-sm"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                style={{ padding: "0.4rem 0.8rem", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+              >
+                <Menu size={14} />
+                <span>Destinations ({destinations.length})</span>
+              </button>
+              <span className="divider-dot"></span>
               <strong>Mahadev Holidays Quotation Builder</strong>
               <span className="divider-dot"></span>
-              <span>Goa Destination Package</span>
+              <span style={{ color: "var(--accent)", fontWeight: 700 }}>{formData.destination} Package</span>
             </div>
 
-            <button 
-              className="btn btn-accent" 
-              onClick={handleDownloadPDF}
-              disabled={isGenerating}
-            >
-              <Download size={16} />
-              {isGenerating ? "Compiling..." : "Download PDF Quotation"}
-            </button>
+            <button
+          className="btn btn-accent"
+          onClick={handleDownloadPDF}
+          disabled={isGenerating || !pdfLibrary}
+        >
+          <Download size={16} />
+          <span className="btn-text-desktop">
+            {isGenerating ? "Generating..." : "Download PDF Quotation"}
+          </span>
+          <span className="btn-text-mobile">
+            {isGenerating ? "PDF..." : "PDF"}
+          </span>
+        </button>
           </div>
 
           {/* Segmented Mobile Tab Switcher */}
@@ -330,59 +782,190 @@ export default function TravelPortal() {
             </div>
           )}
 
-          {/* Workspace Panels (Responsive logic) */}
-          <div className="split-workspace-panels" ref={containerRef}>
-            {isMobile ? (
-              // Mobile Single Tab View
-              activeMobileTab === "edit" ? (
-                <div className="workspace-panel-form" style={{ width: "100%" }}>
-                  <PackageForm
-                    data={formData}
-                    onChange={handleDataChange}
-                    activeStep={formStep}
-                    setActiveStep={setFormStep}
-                    onDownload={handleDownloadPDF}
-                    isGenerating={isGenerating}
-                  />
-                </div>
-              ) : (
-                <div className="workspace-panel-preview" style={{ width: "100%" }}>
-                  <PDFPreview data={formData} />
-                </div>
-              )
-            ) : (
-              // Desktop Dual-Split View with Resizer
-              <>
-                {/* Left Pane - Form */}
-                <div className="workspace-panel-form" style={{ width: `${leftWidth}%` }}>
-                  <PackageForm
-                    data={formData}
-                    onChange={handleDataChange}
-                    activeStep={formStep}
-                    setActiveStep={setFormStep}
-                    onDownload={handleDownloadPDF}
-                    isGenerating={isGenerating}
-                  />
-                </div>
-
-                {/* Draggable Resizer Bar */}
-                <div 
-                  className={`workspace-resizer-bar ${isDragging ? "active" : ""}`}
-                  onMouseDown={handleMouseDown}
-                  onDoubleClick={handleDoubleClick}
-                  title="Drag to resize, Double-click to reset"
-                >
-                  <div className="grab-handle"></div>
-                </div>
-
-                {/* Right Pane - High fidelity preview */}
-                <div className="workspace-panel-preview" style={{ width: `${100 - leftWidth}%` }}>
-                  <PDFPreview data={formData} />
-                </div>
-              </>
+          {/* Main workspace container wrapping Sidebar & Panels */}
+          <div className="main-portal-workspace">
+            {/* Mobile Sidebar Overlay */}
+            {isMobile && isSidebarOpen && (
+              <div className="sidebar-overlay" onClick={() => setIsSidebarOpen(false)}></div>
             )}
+
+            {/* Destinations Sidebar */}
+            <div className={`destinations-sidebar ${isSidebarOpen ? "open" : ""}`}>
+              <div className="sidebar-header">
+                <h3>Destinations</h3>
+                <button 
+                  className="btn btn-accent btn-sm" 
+                  onClick={() => setShowAddModal(true)}
+                  style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}
+                >
+                  <Plus size={12} /> Add
+                </button>
+              </div>
+              <div className="sidebar-list">
+                {destinations.map((dest, idx) => (
+                  <div 
+                    key={dest.id || idx} 
+                    className={`dest-card ${idx === activeIndex ? "active" : ""}`}
+                    onClick={() => {
+                      setActiveIndex(idx);
+                      if (isMobile) setIsSidebarOpen(false);
+                    }}
+                  >
+                    <div className="dest-card-img">
+                      <img src={dest.coverImage || "/goa.png"} alt={dest.destination} />
+                    </div>
+                    <div className="dest-card-info">
+                      <div className="dest-card-name">{dest.destination}</div>
+                      <div className="dest-card-meta">
+                        {dest.durationNights}N / {dest.durationDays}D
+                      </div>
+                    </div>
+                    <div className="dest-card-actions">
+                      <button 
+                        className="action-btn" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRenameIndex(idx);
+                          setRenameName(dest.destination);
+                          setShowRenameModal(true);
+                        }}
+                        title="Rename Destination"
+                      >
+                        <Edit3 size={12} />
+                      </button>
+                      {!dest.isDefault && (
+                        <button 
+                          className="action-btn delete" 
+                          onClick={(e) => handleDeleteDestination(idx, e)}
+                          title="Delete Destination"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Workspace Panels (Responsive logic) */}
+            <div className="split-workspace-panels" ref={containerRef} style={{ flex: 1 }}>
+              {isMobile ? (
+                // Mobile Single Tab View
+                activeMobileTab === "edit" ? (
+                  <div className="workspace-panel-form" style={{ width: "100%" }}>
+                    <PackageForm
+                      data={formData}
+                      onChange={handleDataChange}
+                      activeStep={formStep}
+                      setActiveStep={setFormStep}
+                      onDownload={handleDownloadPDF}
+                      isGenerating={isGenerating}
+                    />
+                  </div>
+                ) : (
+                  <div className="workspace-panel-preview" style={{ width: "100%" }}>
+                    <PDFPreview data={formData} />
+                  </div>
+                )
+              ) : (
+                // Desktop Dual-Split View with Resizer
+                <>
+                  {/* Left Pane - Form */}
+                  <div className="workspace-panel-form" style={{ width: `${leftWidth}%` }}>
+                    <PackageForm
+                      data={formData}
+                      onChange={handleDataChange}
+                      activeStep={formStep}
+                      setActiveStep={setFormStep}
+                      onDownload={handleDownloadPDF}
+                      isGenerating={isGenerating}
+                    />
+                  </div>
+
+                  {/* Draggable Resizer Bar */}
+                  <div 
+                    className={`workspace-resizer-bar ${isDragging ? "active" : ""}`}
+                    onMouseDown={handleMouseDown}
+                    onDoubleClick={handleDoubleClick}
+                    title="Drag to resize, Double-click to reset"
+                  >
+                    <div className="grab-handle"></div>
+                  </div>
+
+                  {/* Right Pane - High fidelity preview */}
+                  <div className="workspace-panel-preview" style={{ width: `${100 - leftWidth}%` }}>
+                    <PDFPreview data={formData} />
+                  </div>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        {/* MODALS */}
+        {showAddModal && (
+          <div className="modal-backdrop">
+            <div className="modal-content">
+              <h4 style={{ fontFamily: "var(--font-sans)", color: "var(--primary)", fontWeight: 700, borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>Create New Destination</h4>
+              <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", margin: "0.5rem 0 1rem 0" }}>
+                Enter the name of your destination. We will prefill it with standard template details to help you get started.
+              </p>
+              <input
+                type="text"
+                className="form-input"
+                placeholder="E.g. Manali, Maldives, Kerala..."
+                value={newDestName}
+                onChange={(e) => setNewDestName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleAddDestination()}
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "0.6rem 0.8rem",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "var(--radius-sm)",
+                  backgroundColor: "var(--bg-primary)",
+                  color: "var(--text-main)",
+                  outline: "none"
+                }}
+              />
+              <div className="modal-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowAddModal(false)}>Cancel</button>
+                <button className="btn btn-primary btn-sm" onClick={handleAddDestination} disabled={!newDestName.trim()}>Create</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showRenameModal && (
+          <div className="modal-backdrop">
+            <div className="modal-content">
+              <h4 style={{ fontFamily: "var(--font-sans)", color: "var(--primary)", fontWeight: 700, borderBottom: "1px solid var(--border-color)", paddingBottom: "0.5rem" }}>Rename Destination</h4>
+              <input
+                type="text"
+                className="form-input"
+                value={renameName}
+                onChange={(e) => setRenameName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleRenameDestination()}
+                autoFocus
+                style={{
+                  width: "100%",
+                  padding: "0.6rem 0.8rem",
+                  border: "1px solid var(--border-color)",
+                  borderRadius: "var(--radius-sm)",
+                  backgroundColor: "var(--bg-primary)",
+                  color: "var(--text-main)",
+                  outline: "none",
+                  marginTop: "1rem"
+                }}
+              />
+              <div className="modal-actions">
+                <button className="btn btn-secondary btn-sm" onClick={() => setShowRenameModal(false)}>Cancel</button>
+                <button className="btn btn-primary btn-sm" onClick={handleRenameDestination} disabled={!renameName.trim()}>Rename</button>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       <style jsx>{`
@@ -390,22 +973,23 @@ export default function TravelPortal() {
         .workspace-view-wrapper {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 81px); /* Header height sub */
+          height: calc(100vh - 62px); /* Header height sub */
         }
 
         .workspace-header-bar {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.75rem 2rem;
+          padding: 0.85rem 2rem;
           background-color: var(--bg-secondary);
-          border-bottom: 1px solid var(--border-color);
+          border-bottom: 1.5px solid var(--border-color);
+          box-shadow: var(--shadow-sm);
         }
 
         .workspace-title-info {
           display: flex;
           align-items: center;
-          gap: 0.75rem;
+          gap: 0.85rem;
           font-size: 0.9rem;
         }
 
@@ -413,7 +997,8 @@ export default function TravelPortal() {
           width: 5px;
           height: 5px;
           border-radius: 50%;
-          background-color: var(--border-color);
+          background-color: var(--accent);
+          opacity: 0.6;
         }
 
         .split-workspace-panels {
@@ -435,7 +1020,7 @@ export default function TravelPortal() {
 
         /* Resizer Bar Styling */
         .workspace-resizer-bar {
-          width: 8px;
+          width: 10px;
           background-color: var(--border-color);
           cursor: col-resize;
           position: relative;
@@ -443,26 +1028,58 @@ export default function TravelPortal() {
           display: flex;
           align-items: center;
           justify-content: center;
-          transition: background-color 0.15s ease;
+          transition: all 0.2s ease;
+          border-left: 1px solid rgba(255, 255, 255, 0.05);
+          border-right: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .workspace-resizer-bar:hover,
         .workspace-resizer-bar.active {
           background-color: var(--accent);
+          box-shadow: 0 0 10px rgba(212, 175, 55, 0.35);
         }
 
         .grab-handle {
           width: 4px;
-          height: 24px;
+          height: 32px;
           background-color: var(--text-muted);
-          border-radius: 2px;
+          border-radius: var(--radius-full);
+          opacity: 0.6;
+          position: relative;
+        }
+
+        .grab-handle::before,
+        .grab-handle::after {
+          content: "";
+          position: absolute;
+          width: 2px;
+          height: 12px;
+          background-color: var(--text-muted);
+          border-radius: 1px;
+          top: 10px;
           opacity: 0.5;
+        }
+
+        .grab-handle::before {
+          left: -4px;
+        }
+
+        .grab-handle::after {
+          right: -4px;
         }
 
         .workspace-resizer-bar:hover .grab-handle,
         .workspace-resizer-bar.active .grab-handle {
-          background-color: var(--bg-dark);
-          opacity: 0.9;
+          background-color: var(--primary-dark);
+          opacity: 0.95;
+        }
+
+        .workspace-resizer-bar:hover .grab-handle::before,
+        .workspace-resizer-bar:hover .grab-handle::after,
+        .workspace-resizer-bar.active .grab-handle::before,
+        .workspace-resizer-bar.active .grab-handle::after {
+          background-color: var(--primary-dark);
+          opacity: 0.8;
         }
 
         /* PREMIUM BUTTON STYLING */
@@ -476,19 +1093,23 @@ export default function TravelPortal() {
           font-weight: 700;
           font-size: 0.875rem;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
           border: 1px solid transparent;
+        }
+
+        .btn:hover {
+          transform: translateY(-1px);
         }
 
         .btn-accent {
           background: linear-gradient(135deg, #d4af37 0%, #c5a059 100%);
           color: #0f172a;
-          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.2);
+          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.25);
         }
 
         .btn-accent:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 6px 14px rgba(212, 175, 55, 0.35);
+          background: linear-gradient(135deg, #e5c158 0%, #d4af37 100%);
+          box-shadow: 0 6px 14px rgba(212, 175, 55, 0.4);
         }
 
         .btn-accent:active {
@@ -498,15 +1119,20 @@ export default function TravelPortal() {
         .btn:disabled {
           opacity: 0.6;
           cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
         }
 
         /* MOBILE TAB SYSTEM */
         .mobile-tabs-container {
           display: flex;
-          background-color: var(--bg-secondary);
-          border-bottom: 1px solid var(--border-color);
-          padding: 0.5rem;
-          gap: 0.5rem;
+          background-color: var(--bg-primary);
+          border: 1px solid var(--border-color);
+          border-radius: 30px;
+          margin: 0.5rem 0.75rem 0.25rem 0.75rem;
+          padding: 4px;
+          gap: 0;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
           z-index: 10;
         }
 
@@ -515,55 +1141,330 @@ export default function TravelPortal() {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 0.5rem;
-          padding: 0.75rem;
-          border-radius: var(--radius-md);
-          border: 1px solid transparent;
-          background-color: var(--bg-primary);
+          gap: 0.4rem;
+          padding: 0.45rem;
+          border-radius: 25px;
+          border: none;
+          background: transparent;
           color: var(--text-muted);
           font-weight: 700;
-          font-size: 0.9rem;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .mobile-tab-btn.active {
-          background-color: var(--primary);
-          color: #ffffff;
-          box-shadow: var(--shadow-md);
+          background-color: var(--accent);
+          color: var(--primary) !important;
+          font-weight: 800;
+          box-shadow: 0 2px 8px rgba(197, 160, 89, 0.25);
+        }
+
+        .btn-text-mobile {
+          display: none;
         }
 
         /* Responsive items */
         @media (max-width: 1024px) {
           .portal-header {
-            padding: 1rem 1.25rem;
+            padding: 0.3rem 0.75rem;
+          }
+
+          .brand-tagline {
+            display: none !important;
+          }
+
+          .logo-image {
+            height: 24px;
           }
 
           .brand-name {
-            font-size: 1.25rem;
-          }
-
-          .workspace-header-bar {
-            padding: 0.75rem 1.25rem;
-            flex-direction: column;
-            gap: 0.75rem;
-            align-items: stretch;
-            text-align: center;
-          }
-
-          .workspace-title-info {
-            justify-content: center;
-            font-size: 0.85rem;
-          }
-
-          .btn-accent {
-            width: 100%;
-            padding: 0.8rem;
             font-size: 0.95rem;
           }
 
+          .user-info {
+            display: none !important;
+          }
+
+          .user-badge {
+            padding: 0.25rem !important;
+            border: none !important;
+            background: transparent !important;
+          }
+
+          .workspace-header-bar {
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            padding: 0.35rem 0.75rem !important;
+            gap: 0 !important;
+            height: 38px !important;
+          }
+
+          .workspace-title,
+          .breadcrumb-separator,
+          .active-destination-badge {
+            display: none !important;
+          }
+
+          .workspace-title-info {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.4rem !important;
+          }
+
+          .mobile-menu-btn {
+            display: flex !important;
+            align-items: center !important;
+            gap: 0.4rem !important;
+            padding: 0.3rem 0.6rem !important;
+            background-color: var(--primary) !important;
+            color: #ffffff !important;
+            border-radius: var(--radius-sm) !important;
+            font-size: 0.75rem !important;
+            font-weight: 700 !important;
+          }
+
+          .mobile-menu-btn::after {
+            content: " Destinations" !important;
+          }
+
+          .btn-accent {
+            width: auto !important;
+            padding: 0.35rem 0.75rem !important;
+            font-size: 0.8rem !important;
+          }
+
+          .btn-text-desktop {
+            display: none !important;
+          }
+
+          .btn-text-mobile {
+            display: inline !important;
+          }
+
           .workspace-view-wrapper {
-            height: calc(100vh - 71px); /* Sub Header height on mobile */
+            height: calc(100vh - 36px) !important; /* Sub Header height on mobile */
+          }
+        }
+        /* DESTINATIONS SIDEBAR */
+        .main-portal-workspace {
+          display: flex;
+          flex: 1;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .destinations-sidebar {
+          width: 260px;
+          min-width: 260px;
+          background-color: var(--bg-secondary);
+          border-right: 1px solid var(--border-color);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          z-index: 10;
+          transition: transform 0.3s ease;
+        }
+
+        .sidebar-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1rem 1.25rem;
+          border-bottom: 1px solid var(--border-color);
+          background-color: var(--bg-primary);
+        }
+
+        .sidebar-header h3 {
+          font-size: 1.05rem;
+          font-family: var(--font-sans);
+          font-weight: 700;
+          color: var(--primary);
+        }
+
+        .sidebar-list {
+          flex: 1;
+          overflow-y: auto;
+          padding: 0.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .dest-card {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.65rem;
+          border: 1.5px solid var(--border-color);
+          border-radius: var(--radius-md);
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          background-color: var(--bg-primary);
+          position: relative;
+          box-shadow: var(--shadow-sm);
+        }
+
+        .dest-card:hover {
+          border-color: var(--accent);
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+
+        .dest-card.active {
+          border-color: var(--accent);
+          background-color: rgba(212, 175, 55, 0.06);
+          box-shadow: 0 4px 10px rgba(212, 175, 55, 0.12);
+        }
+
+        .dest-card-img {
+          width: 48px;
+          height: 48px;
+          border-radius: var(--radius-sm);
+          overflow: hidden;
+          background-color: #cbd5e1;
+          flex-shrink: 0;
+          border: 1px solid var(--border-color);
+        }
+
+        .dest-card-img img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .dest-card:hover .dest-card-img img {
+          transform: scale(1.08);
+        }
+
+        .dest-card-info {
+          flex: 1;
+          overflow: hidden;
+        }
+
+        .dest-card-name {
+          font-weight: 700;
+          font-size: 0.85rem;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          color: var(--text-main);
+        }
+
+        .dest-card-meta {
+          font-size: 0.7rem;
+          color: var(--text-muted);
+          margin-top: 0.1rem;
+        }
+
+        .dest-card-actions {
+          display: flex;
+          gap: 0.15rem;
+          opacity: 0;
+          transition: opacity 0.2s ease;
+        }
+
+        .dest-card:hover .dest-card-actions {
+          opacity: 1;
+        }
+
+        .action-btn {
+          background: none;
+          border: none;
+          cursor: pointer;
+          color: var(--text-muted);
+          padding: 0.2rem;
+          border-radius: 4px;
+          transition: all 0.15s ease;
+          display: inline-flex;
+          align-items: center;
+        }
+
+        .action-btn:hover {
+          color: var(--accent);
+          background-color: rgba(212, 175, 55, 0.1);
+        }
+
+        .action-btn.delete:hover {
+          color: var(--error);
+          background-color: rgba(239, 68, 68, 0.1);
+        }
+
+        /* MODALS STYLE */
+        .modal-backdrop {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(0, 0, 0, 0.6);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+          background-color: var(--bg-secondary);
+          border: 1.5px solid var(--accent);
+          border-radius: var(--radius-md);
+          padding: 1.5rem;
+          width: 90%;
+          max-width: 400px;
+          box-shadow: var(--shadow-lg);
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .modal-actions {
+          display: flex;
+          justify-content: flex-end;
+          gap: 0.75rem;
+          margin-top: 0.5rem;
+        }
+        
+        .btn-sm {
+          padding: 0.4rem 0.8rem;
+          font-size: 0.8rem;
+        }
+
+        .sidebar-overlay {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background-color: rgba(15, 23, 42, 0.4);
+          z-index: 9;
+          backdrop-filter: blur(6px);
+          animation: overlayFade 0.25s ease-out;
+        }
+
+        @keyframes overlayFade {
+          from { opacity: 0; }
+          to { opacity: 1; }
+        }
+
+        @media (max-width: 1024px) {
+          .destinations-sidebar {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 10;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.1);
+            transform: translateX(-100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          .destinations-sidebar.open {
+            transform: translateX(0);
           }
         }
       `}</style>
