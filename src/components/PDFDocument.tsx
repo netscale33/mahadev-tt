@@ -357,15 +357,15 @@ const styles = StyleSheet.create({
   // Pricing Card Block
   priceContainer: {
     backgroundColor: colors.accentLight, // Cream background
-    borderWidth: 3,                      // Thick border
+    borderWidth: 4,                      // Thicker gold border
     borderColor: colors.accent,          // Gold
-    borderRadius: 10,
-    padding: "16 22",                    // Increased breathing room
+    borderRadius: 12,
+    padding: "22 30",                    // Enlarged breathing room
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 15,
+    marginBottom: 20,
   },
   priceMainRow: {
     display: "flex",
@@ -380,7 +380,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   priceTotal: {
-    fontSize: 24,                        // Huge price text size
+    fontSize: 30,                        // Massive price text size (bohot bada)
     fontWeight: "bold",
     color: colors.primary,               // Navy price color
   },
@@ -1110,8 +1110,24 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         <View style={styles.priceContainer}>
           <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>TOTAL PACKAGE PRICE :</Text>
-            <Text style={styles.priceTotal}>Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-</Text>
+            <Text style={styles.priceTotal}>
+              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
+              {data.gstExtra && " (GST 5% EXTRA)"}
+            </Text>
           </View>
+          
+          {data.pricePerPerson && (
+            <>
+              <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabelSmall}>PRICE PER PERSON :</Text>
+                <Text style={{ fontSize: 11.5, fontWeight: "bold", color: colors.primary }}>
+                  Rs. {parseFloat(data.pricePerPerson || "0").toLocaleString("en-IN")}/-
+                  {data.gstExtra && " (GST 5% EXTRA)"}
+                </Text>
+              </View>
+            </>
+          )}
           
           <View style={styles.priceRowDivider} />
           
@@ -1126,6 +1142,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
             <Text style={{ ...styles.priceLabel, fontSize: 11.5 }}>BALANCE PAYMENT DUE :</Text>
             <Text style={styles.priceValueRed}>
               Rs. {((parseFloat(data.totalPrice || "0") || 0) - (parseFloat(data.advancePrice || "0") || 0)).toLocaleString("en-IN")}/-
+              {data.gstExtra && " + 5% GST EXTRA"}
             </Text>
           </View>
         </View>

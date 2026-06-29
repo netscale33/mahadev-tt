@@ -1100,21 +1100,37 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         <div className="page-title">Package Pricing Details</div>
 
         {/* Pricing Summary Card */}
-        <div className="price-card-box" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 18px" }}>
+        <div className="price-card-box" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px 24px", border: "4px solid #c5a059", borderRadius: "12px", backgroundColor: "#faf6eb", marginBottom: "20px" }}>
           <div className="price-row-item" style={{ borderBottom: "1px dashed #c5a059", paddingBottom: "6px" }}>
-            <span className="price-label-text" style={{ fontSize: "1.05rem" }}>TOTAL PACKAGE PRICE :</span>
-            <span className="price-total-text">Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-</span>
+            <span className="price-label-text" style={{ fontSize: "1.2rem", fontWeight: "bold" }}>TOTAL PACKAGE PRICE :</span>
+            <span className="price-total-text" style={{ fontSize: "1.85rem", fontWeight: "bold", color: "#0a2540" }}>
+              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
+              {data.gstExtra && <span style={{ fontSize: "0.85rem", color: "#c5a059", marginLeft: "6px" }}>(GST 5% EXTRA)</span>}
+            </span>
           </div>
+
+          {data.pricePerPerson && (
+            <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
+              <span className="price-label-text" style={{ fontSize: "0.85rem", color: "#64748b" }}>PRICE PER PERSON :</span>
+              <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#c5a059" }}>
+                Rs. {parseFloat(data.pricePerPerson || "0").toLocaleString("en-IN")}/-
+                {data.gstExtra && <span style={{ fontSize: "0.75rem", marginLeft: "4px" }}>(GST 5% EXTRA)</span>}
+              </span>
+            </div>
+          )}
+          
           <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
             <span className="price-label-text" style={{ fontSize: "0.85rem", color: "#64748b" }}>ADVANCE PAYMENT RECEIVED :</span>
             <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#065f46" }}>
               Rs. {parseFloat(data.advancePrice || "0").toLocaleString("en-IN")}/-
             </span>
           </div>
+
           <div className="price-row-item">
-            <span className="price-label-text" style={{ fontSize: "0.9rem", color: "#0a2540", fontWeight: "800" }}>BALANCE PAYMENT DUE :</span>
-            <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#b91c1c" }}>
+            <span className="price-label-text" style={{ fontSize: "0.95rem", color: "#0a2540", fontWeight: "800" }}>BALANCE PAYMENT DUE :</span>
+            <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#b91c1c" }}>
               Rs. {((parseFloat(data.totalPrice || "0") || 0) - (parseFloat(data.advancePrice || "0") || 0)).toLocaleString("en-IN")}/-
+              {data.gstExtra && <span style={{ fontSize: "0.8rem", color: "#b91c1c", marginLeft: "4px" }}>+ 5% GST EXTRA</span>}
             </span>
           </div>
         </div>

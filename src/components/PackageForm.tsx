@@ -1359,18 +1359,23 @@ export const PackageForm: React.FC<PackageFormProps> = ({
 
             <div className="form-grid" style={{ marginTop: "2rem" }}>
               <div className="form-group">
+                <label className="form-label">Price Per Person (Rs.)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.pricePerPerson || ""}
+                  onChange={(e) => handleInputChange("pricePerPerson", e.target.value)}
+                  placeholder="E.g. 12500"
+                />
+              </div>
+
+              <div className="form-group">
                 <label className="form-label">Total Package Price (Rs.)</label>
                 <input
                   type="text"
                   className="form-input"
                   value={data.totalPrice || ""}
-                  onChange={(e) => {
-                    onChange({
-                      ...data,
-                      totalPrice: e.target.value,
-                      pricePerPerson: "",
-                    });
-                  }}
+                  onChange={(e) => handleInputChange("totalPrice", e.target.value)}
                   placeholder="E.g. 50000"
                 />
               </div>
@@ -1386,6 +1391,18 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                 />
               </div>
 
+              <div className="form-group" style={{ display: "flex", alignItems: "center", height: "100%", paddingTop: "1.5rem" }}>
+                <label className="checkbox-card" style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%", padding: "0.6rem 1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", cursor: "pointer", margin: 0 }}>
+                  <input
+                    type="checkbox"
+                    checked={data.gstExtra || false}
+                    onChange={(e) => handleInputChange("gstExtra", e.target.checked)}
+                    style={{ margin: 0, width: "auto", height: "auto" }}
+                  />
+                  <span className="form-label" style={{ margin: 0, fontSize: "0.82rem", cursor: "pointer" }}>5% GST Extra Applicable</span>
+                </label>
+              </div>
+
               <div className="form-group full-width" style={{ marginTop: "0.25rem", padding: "0.6rem 0.85rem", backgroundColor: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
                 <span className="form-label" style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block", margin: 0, fontWeight: "bold" }}>
                   Calculated Balance Payment Due (Rs.):
@@ -1396,6 +1413,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                     const advance = parseFloat(data.advancePrice || "0") || 0;
                     return (total - advance).toLocaleString("en-IN");
                   })()}
+                  {data.gstExtra && " + 5% GST Extra"}
                 </span>
               </div>
             </div>
