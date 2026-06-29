@@ -54,3 +54,39 @@ export async function loadDestinations(): Promise<any[] | null> {
     return null;
   }
 }
+
+const TRACKING_KEY = "pdf_tracking_history";
+
+export async function saveTrackingHistory(history: any[]): Promise<void> {
+  try {
+    const db = await getDB();
+    return new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.put(history, TRACKING_KEY);
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("Error saving tracking history to IndexedDB:", err);
+    throw err;
+  }
+}
+
+export async function loadTrackingHistory(): Promise<any[] | null> {
+  try {
+    const db = await getDB();
+    return new Promise<any[] | null>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, "readonly");
+      const store = tx.objectStore(STORE_NAME);
+      const request = store.get(TRACKING_KEY);
+      
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (err) {
+    console.error("Error loading tracking history from IndexedDB:", err);
+    return null;
+  }
+}

@@ -50,6 +50,7 @@ export interface PDFData {
   services: ServiceStatus;
   pricePerPerson: string;
   totalPrice: string;
+  advancePrice?: string;
   gstExtra: boolean;
   itinerary: ItineraryDay[];
   inclusions: string[];
@@ -1357,8 +1358,8 @@ export const PackageForm: React.FC<PackageFormProps> = ({
             </div>
 
             <div className="form-grid" style={{ marginTop: "2rem" }}>
-              <div className="form-group full-width">
-                <label className="form-label">Package Price (Rs.)</label>
+              <div className="form-group">
+                <label className="form-label">Total Package Price (Rs.)</label>
                 <input
                   type="text"
                   className="form-input"
@@ -1370,8 +1371,32 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                       pricePerPerson: "",
                     });
                   }}
-                  placeholder="E.g. 34300"
+                  placeholder="E.g. 50000"
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Advance Payment Received (Rs.)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.advancePrice || ""}
+                  onChange={(e) => handleInputChange("advancePrice", e.target.value)}
+                  placeholder="E.g. 15000"
+                />
+              </div>
+
+              <div className="form-group full-width" style={{ marginTop: "0.25rem", padding: "0.6rem 0.85rem", backgroundColor: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
+                <span className="form-label" style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block", margin: 0, fontWeight: "bold" }}>
+                  Calculated Balance Payment Due (Rs.):
+                </span>
+                <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "var(--primary)" }}>
+                  Rs. {(() => {
+                    const total = parseFloat(data.totalPrice) || 0;
+                    const advance = parseFloat(data.advancePrice || "0") || 0;
+                    return (total - advance).toLocaleString("en-IN");
+                  })()}
+                </span>
               </div>
             </div>
           </div>

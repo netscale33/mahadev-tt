@@ -51,6 +51,7 @@ interface PDFData {
   services: ServiceStatus;
   pricePerPerson: string;
   totalPrice: string;
+  advancePrice?: string;
   gstExtra: boolean;
   itinerary: ItineraryDay[];
   inclusions: string[];
@@ -1099,10 +1100,22 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         <div className="page-title">Package Pricing Details</div>
 
         {/* Pricing Summary Card */}
-        <div className="price-card-box">
+        <div className="price-card-box" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "12px 18px" }}>
+          <div className="price-row-item" style={{ borderBottom: "1px dashed #c5a059", paddingBottom: "6px" }}>
+            <span className="price-label-text" style={{ fontSize: "1.05rem" }}>TOTAL PACKAGE PRICE :</span>
+            <span className="price-total-text">Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-</span>
+          </div>
+          <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
+            <span className="price-label-text" style={{ fontSize: "0.85rem", color: "#64748b" }}>ADVANCE PAYMENT RECEIVED :</span>
+            <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#065f46" }}>
+              Rs. {parseFloat(data.advancePrice || "0").toLocaleString("en-IN")}/-
+            </span>
+          </div>
           <div className="price-row-item">
-            <span className="price-label-text" style={{ fontSize: "1.1rem" }}>TOTAL PACKAGE PRICE :</span>
-            <span className="price-total-text">Rs. {data.totalPrice}/-</span>
+            <span className="price-label-text" style={{ fontSize: "0.9rem", color: "#0a2540", fontWeight: "800" }}>BALANCE PAYMENT DUE :</span>
+            <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#b91c1c" }}>
+              Rs. {((parseFloat(data.totalPrice || "0") || 0) - (parseFloat(data.advancePrice || "0") || 0)).toLocaleString("en-IN")}/-
+            </span>
           </div>
         </div>
 

@@ -384,6 +384,36 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: colors.primary,               // Navy price color
   },
+  priceRow: {
+    display: "flex",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    paddingVertical: 3,
+  },
+  priceRowDivider: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.accent,
+    borderBottomStyle: "dashed",
+    width: "100%",
+    marginVertical: 4,
+  },
+  priceLabelSmall: {
+    fontSize: 10.5,
+    color: colors.textMuted,
+    fontWeight: "bold",
+  },
+  priceValueGreen: {
+    fontSize: 13.5,
+    fontWeight: "bold",
+    color: "#047857", // Dark Green
+  },
+  priceValueRed: {
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#b91c1c", // Red
+  },
   // Vertical Itinerary Layout with HUGE centered photos (Page 3 & 4)
   itineraryBlock: {
     display: "flex",
@@ -738,6 +768,7 @@ interface PDFData {
   services: ServiceStatus;
   pricePerPerson: string;
   totalPrice: string;
+  advancePrice?: string;
   gstExtra: boolean;
   itinerary: ItineraryDay[];
   inclusions: string[];
@@ -1077,9 +1108,25 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
 
         {/* Pricing Panel - Placed FIRST on Page 2 */}
         <View style={styles.priceContainer}>
-          <View style={styles.priceMainRow}>
+          <View style={styles.priceRow}>
             <Text style={styles.priceLabel}>TOTAL PACKAGE PRICE :</Text>
-            <Text style={styles.priceTotal}>Rs. {data.totalPrice}/-</Text>
+            <Text style={styles.priceTotal}>Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-</Text>
+          </View>
+          
+          <View style={styles.priceRowDivider} />
+          
+          <View style={styles.priceRow}>
+            <Text style={styles.priceLabelSmall}>ADVANCE PAYMENT RECEIVED :</Text>
+            <Text style={styles.priceValueGreen}>Rs. {parseFloat(data.advancePrice || "0").toLocaleString("en-IN")}/-</Text>
+          </View>
+          
+          <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
+          
+          <View style={styles.priceRow}>
+            <Text style={{ ...styles.priceLabel, fontSize: 11.5 }}>BALANCE PAYMENT DUE :</Text>
+            <Text style={styles.priceValueRed}>
+              Rs. {((parseFloat(data.totalPrice || "0") || 0) - (parseFloat(data.advancePrice || "0") || 0)).toLocaleString("en-IN")}/-
+            </Text>
           </View>
         </View>
 

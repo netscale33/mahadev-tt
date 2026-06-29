@@ -5,7 +5,7 @@ import Image from "next/image";
 import { PackageForm, PDFData, HotelItem } from "./PackageForm";
 import { PDFPreview } from "./PDFPreview";
 import { Download, Edit3, Eye, Menu, Plus, Trash2, X } from "lucide-react";
-import { loadDestinations, saveDestinations } from "./db";
+import { loadDestinations, saveDestinations, saveTrackingHistory, loadTrackingHistory } from "./db";
 import { getPrepopulatedHotels } from "./hotelLookup";
 
 // Default Goa data pre-populated from the user's Goa PDF
@@ -58,6 +58,7 @@ const defaultGoaData: PDFData = {
   ],
   pricePerPerson: "",
   totalPrice: "34300",
+  advancePrice: "0",
   gstExtra: false,
   itinerary: [
     {
@@ -158,6 +159,7 @@ const generateDefaultDestination = (name: string, id: string): PDFData => {
   dest.vehicleType = "SEDAN CAB (AC CAR)";
   dest.transferBasis = "PRIVATE BASIS (PVT)";
   dest.customTransferBasis = "";
+  dest.advancePrice = "0";
   dest.coverImage = "";
   
   const prefilled = getPrepopulatedHotels(name);
@@ -225,6 +227,10 @@ const generateDefaultDestination = (name: string, id: string): PDFData => {
 export default function TravelPortal() {
   const [destinations, setDestinations] = useState<PDFData[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [trackingHistory, setTrackingHistory] = useState<any[]>([]);
+  const [sidebarTab, setSidebarTab] = useState<"templates" | "tracking">("templates");
+  const [activeMode, setActiveMode] = useState<"template" | "tracked">("template");
+  const [activeTrackedIndex, setActiveTrackedIndex] = useState<number>(0);
   const [formStep, setFormStep] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -293,6 +299,9 @@ export default function TravelPortal() {
             }
             if (dest.customTransferBasis === undefined) {
               dest.customTransferBasis = "";
+            }
+            if (dest.advancePrice === undefined) {
+              dest.advancePrice = "0";
             }
             // Pre-populate terms & policies if missing or empty
             if (!dest.inclusions || dest.inclusions.length === 0) {
@@ -394,6 +403,9 @@ export default function TravelPortal() {
               if (dest.customTransferBasis === undefined) {
                 dest.customTransferBasis = "";
               }
+              if (dest.advancePrice === undefined) {
+                dest.advancePrice = "0";
+              }
               // Pre-populate terms & policies if missing or empty
               if (!dest.inclusions || dest.inclusions.length === 0) {
                 dest.inclusions = [
@@ -443,6 +455,12 @@ export default function TravelPortal() {
             await saveDestinations(defaultList);
           }
         }
+        
+        // Load tracking history
+        const history = await loadTrackingHistory();
+        if (history && history.length > 0) {
+          setTrackingHistory(history);
+        }
       } catch (e) {
         console.error("Failed to initialize destinations from storage:", e);
         const defaultList = [
@@ -472,7 +490,9 @@ export default function TravelPortal() {
     return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
-  const formData = destinations[activeIndex] || defaultGoaData;
+  const formData = activeMode === "template"
+    ? (destinations[activeIndex] || defaultGoaData)
+    : (trackingHistory[activeTrackedIndex]?.data || defaultGoaData);
 
   const handleAddDestination = () => {
     if (!newDestName.trim()) return;
@@ -612,6 +632,25 @@ export default function TravelPortal() {
     setLeftWidth(65);
   };
 
+  const handleDeleteTrackedItem = (idx: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!window.confirm("Are you sure you want to permanently delete this PDF record from history?")) return;
+    
+    const updatedHistory = trackingHistory.filter((_, i) => i !== idx);
+    setTrackingHistory(updatedHistory);
+    saveTrackingHistory(updatedHistory).catch(err => console.error("Failed to save tracking history:", err));
+    
+    // Fallback if we deleted the currently active tracked item
+    if (activeMode === "tracked") {
+      if (updatedHistory.length === 0) {
+        setActiveMode("template");
+        setSidebarTab("templates");
+      } else if (activeTrackedIndex >= updatedHistory.length) {
+        setActiveTrackedIndex(updatedHistory.length - 1);
+      }
+    }
+  };
+
   // Update check-in, check-out dates and itinerary when arrivalDate changes
   const handleDataChange = (newData: PDFData) => {
     const prevArrival = formData.arrivalDate;
@@ -633,10 +672,24 @@ export default function TravelPortal() {
       }
     }
 
-    const updated = [...destinations];
-    updated[activeIndex] = newData;
-    setDestinations(updated);
-    saveDestinations(updated).catch(err => console.error("Failed to save destinations to IndexedDB:", err));
+    if (activeMode === "template") {
+      const updated = [...destinations];
+      updated[activeIndex] = newData;
+      setDestinations(updated);
+      saveDestinations(updated).catch(err => console.error("Failed to save destinations to IndexedDB:", err));
+    } else {
+      const updatedHistory = [...trackingHistory];
+      if (updatedHistory[activeTrackedIndex]) {
+        updatedHistory[activeTrackedIndex] = {
+          ...updatedHistory[activeTrackedIndex],
+          clientName: newData.guestName || "Client",
+          destination: newData.destination || "Destination",
+          data: newData
+        };
+        setTrackingHistory(updatedHistory);
+        saveTrackingHistory(updatedHistory).catch(err => console.error("Failed to save tracking history to IndexedDB:", err));
+      }
+    }
   };
 
   const handleDownloadPDF = async () => {
@@ -659,6 +712,28 @@ export default function TravelPortal() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
+
+      // Track this PDF download
+      const newTrackedItem = {
+        id: `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        }),
+        clientName: formData.guestName || "Client",
+        destination: formData.destination || "Destination",
+        data: JSON.parse(JSON.stringify(formData)) // Deep clone data snapshot!
+      };
+      
+      setTrackingHistory(prev => {
+        const updated = [newTrackedItem, ...prev];
+        saveTrackingHistory(updated).catch(err => console.error("Failed to save tracking history to DB:", err));
+        return updated;
+      });
     } catch (err) {
       console.error("Failed to generate PDF:", err);
       alert("Error compiling PDF. Please try again.");
@@ -792,59 +867,154 @@ export default function TravelPortal() {
             {/* Destinations Sidebar */}
             <div className={`destinations-sidebar ${isSidebarOpen ? "open" : ""}`}>
               <div className="sidebar-header">
-                <h3>Destinations</h3>
-                <button 
-                  className="btn btn-accent btn-sm" 
-                  onClick={() => setShowAddModal(true)}
-                  style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}
+                <h3>{sidebarTab === "templates" ? "Destinations" : "PDF History"}</h3>
+                {sidebarTab === "templates" && (
+                  <button 
+                    className="btn btn-accent btn-sm" 
+                    onClick={() => setShowAddModal(true)}
+                    style={{ padding: "0.3rem 0.6rem", fontSize: "0.75rem" }}
+                  >
+                    <Plus size={12} /> Add
+                  </button>
+                )}
+              </div>
+
+              <div className="sidebar-tabs-row" style={{ display: "flex", borderBottom: "1px solid var(--border-color)", marginBottom: "0.5rem", padding: "0 0.5rem" }}>
+                <button
+                  className={`sidebar-tab-btn ${sidebarTab === "templates" ? "active" : ""}`}
+                  onClick={() => {
+                    setSidebarTab("templates");
+                    setActiveMode("template");
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "0.5rem",
+                    border: "none",
+                    background: "transparent",
+                    fontSize: "0.8rem",
+                    fontWeight: "bold",
+                    color: sidebarTab === "templates" ? "var(--accent)" : "var(--text-muted)",
+                    borderBottom: sidebarTab === "templates" ? "2px solid var(--accent)" : "2px solid transparent",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
                 >
-                  <Plus size={12} /> Add
+                  Templates
+                </button>
+                <button
+                  className={`sidebar-tab-btn ${sidebarTab === "tracking" ? "active" : ""}`}
+                  onClick={() => {
+                    setSidebarTab("tracking");
+                    if (trackingHistory.length > 0) {
+                      setActiveMode("tracked");
+                    }
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: "0.5rem",
+                    border: "none",
+                    background: "transparent",
+                    fontSize: "0.8rem",
+                    fontWeight: "bold",
+                    color: sidebarTab === "tracking" ? "var(--accent)" : "var(--text-muted)",
+                    borderBottom: sidebarTab === "tracking" ? "2px solid var(--accent)" : "2px solid transparent",
+                    cursor: "pointer",
+                    transition: "all 0.15s ease"
+                  }}
+                >
+                  PDF History
                 </button>
               </div>
-              <div className="sidebar-list">
-                {destinations.map((dest, idx) => (
-                  <div 
-                    key={dest.id || idx} 
-                    className={`dest-card ${idx === activeIndex ? "active" : ""}`}
-                    onClick={() => {
-                      setActiveIndex(idx);
-                      if (isMobile) setIsSidebarOpen(false);
-                    }}
-                  >
-                    <div className="dest-card-img">
-                      <img src={dest.coverImage || "/goa.png"} alt={dest.destination} />
-                    </div>
-                    <div className="dest-card-info">
-                      <div className="dest-card-name">{dest.destination}</div>
-                      <div className="dest-card-meta">
-                        {dest.durationNights}N / {dest.durationDays}D
+
+              <div className="sidebar-list" style={{ overflowY: "auto", flex: 1 }}>
+                {sidebarTab === "templates" ? (
+                  destinations.map((dest, idx) => (
+                    <div 
+                      key={dest.id || idx} 
+                      className={`dest-card ${activeMode === "template" && idx === activeIndex ? "active" : ""}`}
+                      onClick={() => {
+                        setActiveIndex(idx);
+                        setActiveMode("template");
+                        if (isMobile) setIsSidebarOpen(false);
+                      }}
+                    >
+                      <div className="dest-card-img">
+                        <img src={dest.coverImage || "/goa.png"} alt={dest.destination} />
+                      </div>
+                      <div className="dest-card-info">
+                        <div className="dest-card-name">{dest.destination}</div>
+                        <div className="dest-card-meta">
+                          {dest.durationNights}N / {dest.durationDays}D
+                        </div>
+                      </div>
+                      <div className="dest-card-actions">
+                        <button 
+                          className="action-btn" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRenameIndex(idx);
+                            setRenameName(dest.destination);
+                            setShowRenameModal(true);
+                          }}
+                          title="Rename Destination"
+                        >
+                          <Edit3 size={12} />
+                        </button>
+                        {!dest.isDefault && (
+                          <button 
+                            className="action-btn delete" 
+                            onClick={(e) => handleDeleteDestination(idx, e)}
+                            title="Delete Destination"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        )}
                       </div>
                     </div>
-                    <div className="dest-card-actions">
-                      <button 
-                        className="action-btn" 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRenameIndex(idx);
-                          setRenameName(dest.destination);
-                          setShowRenameModal(true);
-                        }}
-                        title="Rename Destination"
-                      >
-                        <Edit3 size={12} />
-                      </button>
-                      {!dest.isDefault && (
-                        <button 
-                          className="action-btn delete" 
-                          onClick={(e) => handleDeleteDestination(idx, e)}
-                          title="Delete Destination"
-                        >
-                          <Trash2 size={12} />
-                        </button>
-                      )}
+                  ))
+                ) : (
+                  trackingHistory.length === 0 ? (
+                    <div style={{ padding: "1.5rem 1rem", textAlign: "center", color: "var(--text-muted)", fontSize: "0.8rem", lineHeight: "1.4" }}>
+                      No PDFs downloaded yet. Downloaded PDF quotes will automatically appear here for tracking!
                     </div>
-                  </div>
-                ))}
+                  ) : (
+                    trackingHistory.map((item, idx) => (
+                      <div 
+                        key={item.id || idx} 
+                        className={`dest-card ${activeMode === "tracked" && idx === activeTrackedIndex ? "active" : ""}`}
+                        onClick={() => {
+                          setActiveTrackedIndex(idx);
+                          setActiveMode("tracked");
+                          if (isMobile) setIsSidebarOpen(false);
+                        }}
+                      >
+                        <div className="dest-card-img" style={{ display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: "rgba(197, 160, 89, 0.1)", borderRadius: "4px" }}>
+                          <span style={{ fontSize: "1.25rem" }}>📄</span>
+                        </div>
+                        <div className="dest-card-info" style={{ overflow: "hidden" }}>
+                          <div className="dest-card-name" style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", fontWeight: "bold" }}>
+                            {item.clientName}_{item.destination}
+                          </div>
+                          <div className="dest-card-meta" style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>
+                            {item.timestamp}
+                          </div>
+                          <div style={{ fontSize: "0.65rem", color: "var(--accent)", marginTop: "2px", fontWeight: "bold" }}>
+                            Bal: ₹{(parseFloat(item.data.totalPrice || "0") - parseFloat(item.data.advancePrice || "0")).toLocaleString("en-IN")}
+                          </div>
+                        </div>
+                        <div className="dest-card-actions">
+                          <button 
+                            className="action-btn delete" 
+                            onClick={(e) => handleDeleteTrackedItem(idx, e)}
+                            title="Delete PDF Record"
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )
+                )}
               </div>
             </div>
 
