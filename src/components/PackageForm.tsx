@@ -583,6 +583,110 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                 />
               </div>
             </div>
+
+            {/* Voucher Inclusions List Editor */}
+            <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "1.25rem", marginTop: "0.5rem" }}>
+              <h3 style={{ fontSize: "0.85rem", fontWeight: "bold", color: "var(--primary)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>Voucher Inclusions</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                {(data.inclusions || []).map((inc, index) => (
+                  <div key={index} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={inc}
+                      onChange={(e) => handleArrayChange("inclusions", index, e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem("inclusions", index)}
+                      style={{
+                        padding: "0.5rem",
+                        backgroundColor: "#fef2f2",
+                        color: "#ef4444",
+                        border: "1px solid #fca5a5",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => addArrayItem("inclusions")}
+                style={{
+                  fontSize: "0.8rem",
+                  padding: "0.4rem 0.8rem",
+                  backgroundColor: "rgba(197, 160, 89, 0.1)",
+                  color: "var(--accent)",
+                  border: "1px solid var(--accent)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <Plus size={12} /> Add Inclusion Item
+              </button>
+            </div>
+
+            {/* Voucher Exclusions List Editor */}
+            <div style={{ borderTop: "1px solid var(--border-color)", paddingTop: "1.25rem", marginTop: "0.5rem" }}>
+              <h3 style={{ fontSize: "0.85rem", fontWeight: "bold", color: "var(--primary)", marginBottom: "0.75rem", textTransform: "uppercase", letterSpacing: "0.5px" }}>Voucher Exclusions</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "0.75rem" }}>
+                {(data.exclusions || []).map((exc, index) => (
+                  <div key={index} style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={exc}
+                      onChange={(e) => handleArrayChange("exclusions", index, e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeArrayItem("exclusions", index)}
+                      style={{
+                        padding: "0.5rem",
+                        backgroundColor: "#fef2f2",
+                        color: "#ef4444",
+                        border: "1px solid #fca5a5",
+                        borderRadius: "var(--radius-sm)",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => addArrayItem("exclusions")}
+                style={{
+                  fontSize: "0.8rem",
+                  padding: "0.4rem 0.8rem",
+                  backgroundColor: "rgba(197, 160, 89, 0.1)",
+                  color: "var(--accent)",
+                  border: "1px solid var(--accent)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.3rem"
+                }}
+              >
+                <Plus size={12} /> Add Exclusion Item
+              </button>
+            </div>
             
             <div style={{ backgroundColor: "#faf6eb", padding: "1rem", borderRadius: "var(--radius-md)", border: "1px dashed var(--accent)", marginTop: "0.5rem" }}>
               <h4 style={{ color: "var(--primary)", fontWeight: "bold", margin: "0 0 0.5rem 0", fontSize: "0.85rem" }}>VOUCHER LINKED DETAILS:</h4>
