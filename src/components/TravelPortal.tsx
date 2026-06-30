@@ -1536,12 +1536,12 @@ export default function TravelPortal() {
           }
 
           .workspace-header-bar {
-            flex-direction: row !important;
-            justify-content: space-between !important;
-            align-items: center !important;
-            padding: 0.35rem 0.75rem !important;
-            gap: 0 !important;
-            height: 38px !important;
+            flex-direction: column !important;
+            justify-content: flex-start !important;
+            align-items: stretch !important;
+            padding: 0.6rem 0.75rem !important;
+            gap: 0.5rem !important;
+            height: auto !important;
           }
 
           .workspace-title,
@@ -1553,18 +1553,35 @@ export default function TravelPortal() {
           .workspace-title-info {
             display: flex !important;
             align-items: center !important;
+            justify-content: space-between !important;
+            width: 100% !important;
             gap: 0.4rem !important;
+          }
+
+          .workspace-tabs {
+            margin: 0 !important;
+            display: flex !important;
+            justify-content: space-between !important;
+            width: 100% !important;
+            gap: 0.35rem !important;
+          }
+
+          .workspace-tab-btn {
+            flex: 1 !important;
+            text-align: center !important;
+            padding: 0.45rem !important;
+            font-size: 0.75rem !important;
           }
 
           .mobile-menu-btn {
             display: flex !important;
             align-items: center !important;
             gap: 0.4rem !important;
-            padding: 0.3rem 0.6rem !important;
+            padding: 0.35rem 0.75rem !important;
             background-color: var(--primary) !important;
             color: #ffffff !important;
             border-radius: var(--radius-sm) !important;
-            font-size: 0.75rem !important;
+            font-size: 0.78rem !important;
             font-weight: 700 !important;
           }
 
@@ -1573,21 +1590,24 @@ export default function TravelPortal() {
           }
 
           .btn-accent {
-            width: auto !important;
-            padding: 0.35rem 0.75rem !important;
-            font-size: 0.8rem !important;
+            width: 100% !important;
+            padding: 0.5rem 1rem !important;
+            font-size: 0.82rem !important;
+            display: flex !important;
+            justify-content: center !important;
+            align-items: center !important;
           }
 
           .btn-text-desktop {
-            display: none !important;
-          }
-
-          .btn-text-mobile {
             display: inline !important;
           }
 
+          .btn-text-mobile {
+            display: none !important;
+          }
+
           .workspace-view-wrapper {
-            height: calc(100vh - 36px) !important; /* Sub Header height on mobile */
+            height: calc(100vh - 170px) !important; /* Sub Header height dynamic height wrapper */
           }
         }
         /* DESTINATIONS SIDEBAR */
