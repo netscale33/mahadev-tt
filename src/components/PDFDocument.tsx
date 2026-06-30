@@ -1957,7 +1957,12 @@ export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data 
             <Text style={[voucherStyles.policyTitle, { backgroundColor: "#f0fdf4", color: "#16a34a" }]}>Inclusions</Text>
             {data.inclusions && data.inclusions.length > 0 ? (
               data.inclusions.map((inc, i) => (
-                <Text key={i} style={voucherStyles.policyText}>✔  {inc}</Text>
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                  <View style={{ marginRight: 6, display: "flex", justifyContent: "center" }}>
+                    <VectorCheck size={10} />
+                  </View>
+                  <Text style={[voucherStyles.policyText, { flex: 1, paddingLeft: 0, marginBottom: 0 }]}>{inc}</Text>
+                </View>
               ))
             ) : (
               <Text style={voucherStyles.policyText}>• No inclusions specified</Text>
@@ -1969,7 +1974,12 @@ export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data 
             <Text style={[voucherStyles.policyTitle, { backgroundColor: "#fef2f2", color: "#ef4444" }]}>Exclusions</Text>
             {data.exclusions && data.exclusions.length > 0 ? (
               data.exclusions.map((exc, i) => (
-                <Text key={i} style={voucherStyles.policyText}>✘  {exc}</Text>
+                <View key={i} style={{ flexDirection: "row", alignItems: "center", marginBottom: 4 }}>
+                  <View style={{ marginRight: 6, display: "flex", justifyContent: "center" }}>
+                    <VectorCross size={10} />
+                  </View>
+                  <Text style={[voucherStyles.policyText, { flex: 1, paddingLeft: 0, marginBottom: 0 }]}>{exc}</Text>
+                </View>
               ))
             ) : (
               <Text style={voucherStyles.policyText}>• No exclusions specified</Text>
