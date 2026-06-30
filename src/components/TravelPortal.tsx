@@ -120,6 +120,7 @@ const defaultGoaData: PDFData = {
     "Rates are dynamic and subject to change without prior notice.",
     "Standard check-in time is 2:00 PM; checkout is 12:00 PM.",
   ],
+  version: 1,
 };
 
 // Add days to date helper
@@ -151,6 +152,12 @@ const PRELOADED_DESTINATIONS = [
 const generateDefaultDestination = (name: string, id: string): PDFData => {
   const dest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
   dest.id = id;
+  if (typeof window !== "undefined") {
+    let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
+    if (isNaN(counter) || counter <= 0) counter = 1;
+    dest.tourCode = counter.toString().padStart(7, "0");
+    localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
+  }
   dest.destination = name;
   dest.guestName = "Name of Client";
   dest.arrivalDate = new Date().toISOString().split('T')[0];
@@ -228,6 +235,7 @@ const generateDefaultDestination = (name: string, id: string): PDFData => {
 export default function TravelPortal() {
   const [destinations, setDestinations] = useState<PDFData[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [workspaceTab, setWorkspaceTab] = useState<"quotation" | "voucher">("quotation");
   const [trackingHistory, setTrackingHistory] = useState<any[]>([]);
   const [sidebarTab, setSidebarTab] = useState<"templates" | "tracking">("templates");
   const [activeMode, setActiveMode] = useState<"template" | "tracked">("template");
@@ -263,8 +271,16 @@ export default function TravelPortal() {
       try {
         const saved = await loadDestinations();
         if (saved && saved.length > 0) {
-          // Make sure each destination has a hotelLibrary array and separated pickup/drop points
           const migrated = saved.map((dest: any) => {
+            if (!dest.tourCode) {
+              let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
+              if (isNaN(counter) || counter <= 0) counter = 1;
+              dest.tourCode = counter.toString().padStart(7, "0");
+              localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
+            }
+            if (dest.version === undefined) {
+              dest.version = 1;
+            }
             const prefilled = getPrepopulatedHotels(dest.destination);
             if (!dest.hotelLibrary || dest.hotelLibrary.length <= 1) {
               if (prefilled && prefilled.length > 0) {
@@ -509,6 +525,12 @@ export default function TravelPortal() {
     if (!newDestName.trim()) return;
     const newDest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
     newDest.id = `dest-${Date.now()}`;
+    if (typeof window !== "undefined") {
+      let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
+      if (isNaN(counter) || counter <= 0) counter = 1;
+      newDest.tourCode = counter.toString().padStart(7, "0");
+      localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
+    }
     newDest.destination = newDestName.trim();
     newDest.guestName = "Name of Client";
     newDest.arrivalDate = new Date().toISOString().split('T')[0];
@@ -708,16 +730,36 @@ export default function TravelPortal() {
     setIsGenerating(true);
 
     try {
+      const nextVersion = (formData.version || 1) + 1;
+      const updatedData = { ...formData, version: nextVersion };
+
+      // Save version increment to state/db
+      if (activeMode === "template") {
+        const updated = [...destinations];
+        updated[activeIndex] = updatedData;
+        setDestinations(updated);
+        await saveDestinations(updated);
+      } else {
+        const updatedHistory = [...trackingHistory];
+        if (updatedHistory[activeTrackedIndex]) {
+          updatedHistory[activeTrackedIndex] = {
+            ...updatedHistory[activeTrackedIndex],
+            data: updatedData
+          };
+          setTrackingHistory(updatedHistory);
+          await saveTrackingHistory(updatedHistory);
+        }
+      }
+
       const { PDFDocumentComponent } = await import("./PDFDocument");
-      
-      const blob = await pdfLibrary.pdf(<PDFDocumentComponent data={formData} />).toBlob();
+      const blob = await pdfLibrary.pdf(<PDFDocumentComponent data={updatedData} />).toBlob();
       
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       
-      const sanitizedName = formData.guestName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
-      const sanitizedDest = formData.destination.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      const sanitizedName = updatedData.guestName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      const sanitizedDest = updatedData.destination.replace(/[^a-z0-9]/gi, "_").toLowerCase();
       link.download = `Mahadev_Holidays_${sanitizedDest}_${sanitizedName}.pdf`;
       document.body.appendChild(link);
       link.click();
@@ -735,9 +777,9 @@ export default function TravelPortal() {
           minute: "2-digit",
           hour12: true
         }),
-        clientName: formData.guestName || "Client",
-        destination: formData.destination || "Destination",
-        data: JSON.parse(JSON.stringify(formData)) // Deep clone data snapshot!
+        clientName: updatedData.guestName || "Client",
+        destination: updatedData.destination || "Destination",
+        data: JSON.parse(JSON.stringify(updatedData)) // Deep clone data snapshot!
       };
       
       setTrackingHistory(prev => {
@@ -750,6 +792,84 @@ export default function TravelPortal() {
       alert("Error compiling PDF. Please try again.");
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadVoucherPDF = async () => {
+    if (!pdfLibrary) return;
+    setIsGenerating(true);
+
+    try {
+      const nextVersion = (formData.version || 1) + 1;
+      const updatedData = { ...formData, version: nextVersion };
+
+      // Save version increment to state/db
+      if (activeMode === "template") {
+        const updated = [...destinations];
+        updated[activeIndex] = updatedData;
+        setDestinations(updated);
+        await saveDestinations(updated);
+      } else {
+        const updatedHistory = [...trackingHistory];
+        if (updatedHistory[activeTrackedIndex]) {
+          updatedHistory[activeTrackedIndex] = {
+            ...updatedHistory[activeTrackedIndex],
+            data: updatedData
+          };
+          setTrackingHistory(updatedHistory);
+          await saveTrackingHistory(updatedHistory);
+        }
+      }
+
+      const { VoucherPDFDocumentComponent } = await import("./PDFDocument");
+      const blob = await pdfLibrary.pdf(<VoucherPDFDocumentComponent data={updatedData} />).toBlob();
+      
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      
+      const sanitizedName = (updatedData.paymentPaidBy || updatedData.guestName).replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      const sanitizedDest = updatedData.destination.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      link.download = `Mahadev_Voucher_${sanitizedDest}_${sanitizedName}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Track this PDF download (Voucher downloads also get tracked inside the Tracking History!)
+      const newTrackedItem = {
+        id: `pdf-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        timestamp: new Date().toLocaleString("en-IN", {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true
+        }),
+        clientName: (updatedData.paymentPaidBy || updatedData.guestName) + " (Voucher)",
+        destination: updatedData.destination || "Destination",
+        data: JSON.parse(JSON.stringify(updatedData)) // Deep clone data snapshot!
+      };
+      
+      setTrackingHistory(prev => {
+        const updated = [newTrackedItem, ...prev];
+        saveTrackingHistory(updated).catch(err => console.error("Failed to save tracking history to DB:", err));
+        return updated;
+      });
+    } catch (err) {
+      console.error("Failed to generate Voucher PDF:", err);
+      alert("Error compiling Voucher PDF. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleDownloadAction = async () => {
+    if (workspaceTab === "voucher") {
+      await handleDownloadVoucherPDF();
+    } else {
+      await handleDownloadPDF();
     }
   };
 
@@ -833,19 +953,56 @@ export default function TravelPortal() {
               <span style={{ color: "var(--accent)", fontWeight: 700 }}>{formData.destination} Package</span>
             </div>
 
+            <div className="workspace-tabs" style={{ display: "flex", gap: "0.5rem", borderBottom: "none", margin: "0 auto 0 1.5rem" }}>
+              <button
+                className={`workspace-tab-btn ${workspaceTab === "quotation" ? "active" : ""}`}
+                onClick={() => setWorkspaceTab("quotation")}
+                style={{
+                  padding: "0.4rem 1rem",
+                  fontSize: "0.78rem",
+                  fontWeight: "bold",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  backgroundColor: workspaceTab === "quotation" ? "var(--accent)" : "transparent",
+                  color: workspaceTab === "quotation" ? "var(--primary)" : "var(--text-muted)",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Quotation Brochure
+              </button>
+              <button
+                className={`workspace-tab-btn ${workspaceTab === "voucher" ? "active" : ""}`}
+                onClick={() => setWorkspaceTab("voucher")}
+                style={{
+                  padding: "0.4rem 1rem",
+                  fontSize: "0.78rem",
+                  fontWeight: "bold",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  backgroundColor: workspaceTab === "voucher" ? "var(--accent)" : "transparent",
+                  color: workspaceTab === "voucher" ? "var(--primary)" : "var(--text-muted)",
+                  transition: "all 0.2s ease"
+                }}
+              >
+                Voucher & Receipt
+              </button>
+            </div>
+
             <button
-          className="btn btn-accent"
-          onClick={handleDownloadPDF}
-          disabled={isGenerating || !pdfLibrary}
-        >
-          <Download size={16} />
-          <span className="btn-text-desktop">
-            {isGenerating ? "Generating..." : "Download PDF Quotation"}
-          </span>
-          <span className="btn-text-mobile">
-            {isGenerating ? "PDF..." : "PDF"}
-          </span>
-        </button>
+              className="btn btn-accent"
+              onClick={handleDownloadAction}
+              disabled={isGenerating || !pdfLibrary}
+            >
+              <Download size={16} />
+              <span className="btn-text-desktop">
+                {isGenerating ? "Generating..." : workspaceTab === "voucher" ? "Download Voucher PDF" : "Download PDF Quotation"}
+              </span>
+              <span className="btn-text-mobile">
+                {isGenerating ? "PDF..." : "PDF"}
+              </span>
+            </button>
           </div>
 
           {/* Segmented Mobile Tab Switcher */}
@@ -1040,13 +1197,14 @@ export default function TravelPortal() {
                       onChange={handleDataChange}
                       activeStep={formStep}
                       setActiveStep={setFormStep}
-                      onDownload={handleDownloadPDF}
+                      onDownload={handleDownloadAction}
                       isGenerating={isGenerating}
+                      mode={workspaceTab}
                     />
                   </div>
                 ) : (
                   <div className="workspace-panel-preview" style={{ width: "100%" }}>
-                    <PDFPreview data={formData} />
+                    <PDFPreview data={formData} type={workspaceTab} />
                   </div>
                 )
               ) : (
@@ -1059,8 +1217,9 @@ export default function TravelPortal() {
                       onChange={handleDataChange}
                       activeStep={formStep}
                       setActiveStep={setFormStep}
-                      onDownload={handleDownloadPDF}
+                      onDownload={handleDownloadAction}
                       isGenerating={isGenerating}
+                      mode={workspaceTab}
                     />
                   </div>
 
@@ -1076,7 +1235,7 @@ export default function TravelPortal() {
 
                   {/* Right Pane - High fidelity preview */}
                   <div className="workspace-panel-preview" style={{ width: `${100 - leftWidth}%` }}>
-                    <PDFPreview data={formData} />
+                    <PDFPreview data={formData} type={workspaceTab} />
                   </div>
                 </>
               )}
@@ -1197,6 +1356,7 @@ export default function TravelPortal() {
         .workspace-panel-preview {
           height: 100%;
           background-color: #f1f5f9;
+          overflow-y: auto;
         }
 
         /* Resizer Bar Styling */

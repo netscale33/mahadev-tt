@@ -1,6 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import { Check, X, Star } from "lucide-react";
+import { convertNumberToWords } from "./wordsHelper";
 
 interface ServiceStatus {
   flights: boolean;
@@ -67,6 +68,17 @@ interface PDFData {
   coverImage?: string;
   hotels: HotelItem[];
   hotelLibrary?: HotelItem[];
+  tourCode?: string;
+  receiptNo?: string;
+  paymentDate?: string;
+  paymentRefId?: string;
+  paymentMode?: string;
+  paymentAmountPaid?: string;
+  paymentAmountInWords?: string;
+  paymentPaidBy?: string;
+  voucherPhone?: string;
+  voucherConfNo?: string;
+  version?: number;
 }
 
 // Simple date formatter to convert YYYY-MM-DD to DD MMM YYYY
@@ -157,9 +169,472 @@ const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, d
   return `Cab: ${data.vehicleType} (${basis})`;
 };
 
-export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
+export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher" }> = ({ data, type = "quotation" }) => {
   const formattedArrival = formatPreviewDate(data.arrivalDate);
   const totalPages = 5 + (data.itinerary || []).length;
+
+  if (type === "voucher") {
+    return (
+      <div className="preview-sheet-container">
+        <style jsx>{`
+          .preview-sheet-container {
+            background-color: #e2e8f0;
+            padding: 2rem 1rem;
+            height: 100%;
+            overflow-y: auto;
+            overflow-x: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            width: 100%;
+          }
+          .pdf-page-mock {
+            width: 595px;
+            min-height: 842px;
+            background-color: #ffffff;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.15), 0 10px 10px -5px rgba(0,0,0,0.1);
+            border-radius: 6px;
+            padding: 90px 45px 70px 45px;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            color: #1e293b;
+            font-family: var(--font-inter), system-ui, sans-serif;
+            font-size: 10.5px;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
+          }
+          @media (max-width: 640px) {
+            .preview-sheet-container {
+              padding: 1rem 0.25rem !important;
+              overflow-x: hidden !important;
+              width: 100vw !important;
+            }
+            .pdf-page-mock {
+              transform: scale(calc((100vw - 20px) / 595)) !important;
+              transform-origin: top center !important;
+              margin-bottom: calc(842px * (1 - ((100vw - 20px) / 595))) !important;
+              box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1) !important;
+            }
+          }
+        `}</style>
+
+        {/* Page 1: Payment Receipt */}
+        <div className="pdf-page-mock">
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #1e3a8a", paddingBottom: "6px", marginBottom: "15px", width: "100%" }}>
+            <img src="/logo.jpg" alt="Logo" style={{ height: "45px", width: "auto" }} />
+            <div style={{ textAlign: "center" }}>
+              <span style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "1px" }}>MAHADEV HOLIDAYS</span>
+              <p style={{ fontSize: "0.55rem", color: "#475569", margin: "2px 0 0 0", maxWidth: "260px", lineHeight: "1.3" }}>
+                D/2069, Central Bazzar, Opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat, India - 395006
+              </p>
+            </div>
+            <div style={{ textAlign: "right", fontSize: "0.6rem", color: "#475569", lineHeight: "1.3" }}>
+              <span>Ph: +91 9328151481</span><br />
+              <span>mahadevholidays2000@gmail.com</span>
+            </div>
+          </div>
+
+          {/* Banner */}
+          <div style={{ backgroundColor: "#1e3a8a", borderTop: "3px solid #c5a059", padding: "6px 0", textAlign: "center", marginBottom: "15px", width: "100%" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.9rem", fontWeight: "bold", letterSpacing: "1.5px" }}>PAYMENT RECEIPT</span>
+          </div>
+
+          {/* Table */}
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", marginBottom: "20px" }}>
+            <tbody>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Receipt No</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#1e3a8a" }}>
+                  {data.receiptNo || `RCP-${data.tourCode || "0000001"}`}
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Payment Date</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", color: "#334155" }}>
+                  {data.paymentDate ? formatPreviewDate(data.paymentDate) : formatPreviewDate(new Date().toISOString().split("T")[0])}
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Reference ID / TXN ID</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", color: "#334155" }}>{data.paymentRefId || "-"}</td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Paid By</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155" }}>
+                  {data.paymentPaidBy || data.guestName}
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Mode of Payment</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", color: "#334155" }}>{data.paymentMode || "UPI"}</td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Amount Paid</td>
+                <td style={{ padding: "8px", fontSize: "0.85rem", fontWeight: "bold", color: "#16a34a" }}>
+                  Rs. {parseFloat(data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "0")).toLocaleString("en-IN")}/-
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #cbd5e1" }}>
+                <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Amount in Words</td>
+                <td style={{ padding: "8px", fontSize: "0.74rem", color: "#64748b" }}>
+                  {data.paymentAmountInWords || convertNumberToWords(data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "0"))}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Highlight Payment Callout Card */}
+          {(() => {
+            const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+            const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+            const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+            const overallTotal = baseTotal + trainTotal + flightTotal;
+            const paidAmount = parseFloat(data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "0")) || 0;
+            const balanceDue = overallTotal - paidAmount;
+            return (
+              <div style={{
+                border: `2px solid ${balanceDue > 0 ? "#ef4444" : "#10b981"}`,
+                borderRadius: "6px",
+                padding: "12px",
+                backgroundColor: balanceDue > 0 ? "#fef2f2" : "#f0fdf4",
+                marginBottom: "15px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                width: "100%",
+                boxSizing: "border-box"
+              }}>
+                <div style={{ display: "flex", flexDirection: "column", textAlign: "left" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: "bold", color: "#64748b", letterSpacing: "0.5px" }}>TOTAL PACKAGE COST</span>
+                  <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#0a2540", marginTop: "2px" }}>
+                    Rs. {overallTotal.toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", textAlign: "center" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: "bold", color: "#64748b", letterSpacing: "0.5px" }}>AMOUNT PAID</span>
+                  <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: "#10b981", marginTop: "2px" }}>
+                    Rs. {paidAmount.toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", textAlign: "right" }}>
+                  <span style={{ fontSize: "0.65rem", fontWeight: "bold", color: "#64748b", letterSpacing: "0.5px" }}>BALANCE DUE</span>
+                  <span style={{ fontSize: "1.2rem", fontWeight: "bold", color: balanceDue > 0 ? "#ef4444" : "#10b981", marginTop: "2px" }}>
+                    Rs. {balanceDue.toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Section title */}
+          <div style={{ backgroundColor: "#3b82f6", padding: "4px 8px", marginBottom: "8px", width: "100%", boxSizing: "border-box" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px" }}>BOOKING DETAILS</span>
+          </div>
+
+          {/* Booking details table */}
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", marginBottom: "15px" }}>
+            <tbody>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Booking Code</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#1e3a8a" }}>
+                  {data.tourCode || "0000001"}
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Quotation Revision</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#b45309" }}>
+                  Quotation {data.version || 1}
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Package Name</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", color: "#334155" }}>
+                  {data.guestName} - {data.destination} Tour Package
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Guest Details</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", color: "#334155" }}>
+                  {data.guestName} ({data.numPax})
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Travel Date</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", color: "#334155" }}>
+                  From {formattedArrival} to {(() => {
+                    const dep = new Date(data.arrivalDate);
+                    dep.setDate(dep.getDate() + (data.durationNights || 3));
+                    return formatPreviewDate(dep.toISOString().split("T")[0]);
+                  })()} ({(data.durationNights || 3)} Nights / {(data.durationDays || 4)} Days)
+                </td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #cbd5e1" }}>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Payment Status</td>
+                <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155" }}>
+                  Paid: Rs. {parseFloat(data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "0")).toLocaleString("en-IN")}/- | Total: Rs. {(() => {
+                    const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+                    const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+                    const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+                    return (baseTotal + trainTotal + flightTotal).toLocaleString("en-IN");
+                  })()}/-
+                  <span style={{ color: "#ef4444", marginLeft: "10px" }}>
+                    (Balance: Rs. {(() => {
+                      const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+                      const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+                      const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+                      const paid = parseFloat(data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "0")) || 0;
+                      return (baseTotal + trainTotal + flightTotal - paid).toLocaleString("en-IN");
+                    })()}/-{data.gstExtra && " + 5% GST EXTRA"})
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Branding logo */}
+          <div style={{ display: "flex", justifyContent: "center", margin: "15px 0", width: "100%" }}>
+            <img src="/logo.jpg" alt="Logo" style={{ height: "35px", width: "auto", opacity: 0.7 }} />
+          </div>
+
+          {/* Signature */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginTop: "20px", width: "100%" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a" }}>For MAHADEV HOLIDAYS</span>
+            <span style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "20px" }}>Digitally Signed / Authorized Signatory</span>
+          </div>
+
+          {/* Footer */}
+          <div style={{ position: "absolute", bottom: "15px", left: "45px", right: "45px", display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: "5px", fontSize: "0.6rem", color: "#94a3b8" }}>
+            <span>This is an official computer-generated receipt.</span>
+            <span>Page 1 of 3</span>
+          </div>
+        </div>
+
+        {/* Page 2: Booking Voucher */}
+        <div className="pdf-page-mock">
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #1e3a8a", paddingBottom: "6px", marginBottom: "15px", width: "100%" }}>
+            <img src="/logo.jpg" alt="Logo" style={{ height: "45px", width: "auto" }} />
+            <div style={{ textAlign: "center" }}>
+              <span style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "1px" }}>MAHADEV HOLIDAYS</span>
+              <p style={{ fontSize: "0.55rem", color: "#475569", margin: "2px 0 0 0", maxWidth: "260px", lineHeight: "1.3" }}>
+                D/2069, Central Bazzar, Opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat, India - 395006
+              </p>
+            </div>
+            <div style={{ textAlign: "right", fontSize: "0.6rem", color: "#475569", lineHeight: "1.3" }}>
+              <span>Ph: +91 9328151481</span><br />
+              <span>mahadevholidays2000@gmail.com</span>
+            </div>
+          </div>
+
+          {/* Banner */}
+          <div style={{ backgroundColor: "#1e3a8a", borderTop: "3px solid #c5a059", padding: "6px 0", textAlign: "center", marginBottom: "10px", width: "100%" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.9rem", fontWeight: "bold", letterSpacing: "1.5px" }}>BOOKING VOUCHER</span>
+          </div>
+
+          <p style={{ fontSize: "0.78rem", fontWeight: "bold", textAlign: "center", color: "#1e3a8a", marginBottom: "15px" }}>
+            Booking Code: {data.tourCode || "0000001"} (Quotation {data.version || 1}) | Travel Dates: {formattedArrival} to {(() => {
+              const dep = new Date(data.arrivalDate);
+              dep.setDate(dep.getDate() + (data.durationNights || 3));
+              return formatPreviewDate(dep.toISOString().split("T")[0]);
+            })()}
+          </p>
+
+          {/* Guest Details */}
+          <div style={{ backgroundColor: "#3b82f6", padding: "4px 8px", marginBottom: "8px", width: "100%", boxSizing: "border-box" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px" }}>GUEST DETAILS</span>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", marginBottom: "15px" }}>
+            <tbody>
+              <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
+                <td style={{ width: "30%", padding: "6px 8px", fontSize: "0.74rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Lead Passenger</td>
+                <td style={{ padding: "6px 8px", fontSize: "0.74rem", fontWeight: "bold", color: "#334155" }}>{data.guestName}</td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #cbd5e1", backgroundColor: "#f8fafc" }}>
+                <td style={{ width: "30%", padding: "6px 8px", fontSize: "0.74rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Contact Number</td>
+                <td style={{ padding: "6px 8px", fontSize: "0.74rem", color: "#334155" }}>{data.voucherPhone || "-"}</td>
+              </tr>
+              <tr style={{ borderBottom: "1px solid #cbd5e1" }}>
+                <td style={{ width: "30%", padding: "6px 8px", fontSize: "0.74rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Rooms / Pax</td>
+                <td style={{ padding: "6px 8px", fontSize: "0.74rem", color: "#334155" }}>{data.numRooms} / {data.numPax}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          {/* Hotel details */}
+          <div style={{ backgroundColor: "#3b82f6", padding: "4px 8px", marginBottom: "8px", width: "100%", boxSizing: "border-box" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px" }}>HOTEL STAY DETAILS (CONFIRMED)</span>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", marginBottom: "15px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f1f5f9", borderBottom: "1px solid #cbd5e1" }}>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", borderRight: "1px solid #cbd5e1", width: "35%" }}>Hotel Name</th>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", borderRight: "1px solid #cbd5e1", width: "15%" }}>Location</th>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", borderRight: "1px solid #cbd5e1", width: "25%" }}>Check-In / Out</th>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", borderRight: "1px solid #cbd5e1", width: "13%" }}>Conf No</th>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", width: "12%" }}>Rooms</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data.hotels || []).map((h, i) => (
+                <tr key={i} style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: i % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                  <td style={{ padding: "6px 8px", fontSize: "0.68rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>{h.hotelName}</td>
+                  <td style={{ padding: "6px 8px", fontSize: "0.68rem", color: "#334155", borderRight: "1px solid #cbd5e1" }}>{data.destination}</td>
+                  <td style={{ padding: "6px 8px", fontSize: "0.63rem", color: "#475569", borderRight: "1px solid #cbd5e1", lineHeight: "1.3" }}>
+                    In: {h.hotelCheckIn ? h.hotelCheckIn.replace("T", " ") : formattedArrival}<br />
+                    Out: {h.hotelCheckOut ? h.hotelCheckOut.replace("T", " ") : "-"}
+                  </td>
+                  <td style={{ padding: "6px 8px", fontSize: "0.68rem", fontWeight: "bold", color: "#16a34a", borderRight: "1px solid #cbd5e1" }}>{data.voucherConfNo || "-"}</td>
+                  <td style={{ padding: "6px 8px", fontSize: "0.68rem", color: "#334155" }}>{data.numRooms}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Travel Itinerary Summary */}
+          <div style={{ backgroundColor: "#3b82f6", padding: "4px 8px", marginBottom: "8px", width: "100%", boxSizing: "border-box" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px" }}>TRAVEL ITINERARY SUMMARY</span>
+          </div>
+          <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", marginBottom: "15px" }}>
+            <thead>
+              <tr style={{ backgroundColor: "#f1f5f9", borderBottom: "1px solid #cbd5e1" }}>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", borderRight: "1px solid #cbd5e1", width: "20%" }}>Day & Date</th>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", borderRight: "1px solid #cbd5e1", width: "60%" }}>Activity Details</th>
+                <th style={{ padding: "6px 8px", fontSize: "0.7rem", fontWeight: "bold", color: "#1e3a8a", textAlign: "left", width: "20%" }}>Sharing / Basis</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data.itinerary || []).map((item, idx) => {
+                const dateObj = new Date(data.arrivalDate);
+                dateObj.setDate(dateObj.getDate() + idx);
+                const dayDateFormatted = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                const transferText = item.transferBasis || data.transferBasis || "PRIVATE BASIS (PVT)";
+                
+                return (
+                  <tr key={idx} style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: idx % 2 === 0 ? "#ffffff" : "#f8fafc" }}>
+                    <td style={{ padding: "6px 8px", fontSize: "0.68rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>
+                      Day {item.day}<br />
+                      <span style={{ fontSize: "0.58rem", color: "#64748b" }}>{dayDateFormatted}</span>
+                    </td>
+                    <td style={{ padding: "6px 8px", fontSize: "0.68rem", fontWeight: "bold", color: "#1e3a8a", borderRight: "1px solid #cbd5e1" }}>{item.title}</td>
+                    <td style={{ padding: "6px 8px", fontSize: "0.65rem", color: "#334155" }}>
+                      {transferText === "CUSTOM BASIS" ? (item.customTransferBasis || "Custom") : transferText}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+
+          {/* Branding logo */}
+          <div style={{ display: "flex", justifyContent: "center", margin: "15px 0", width: "100%" }}>
+            <img src="/logo.jpg" alt="Logo" style={{ height: "35px", width: "auto", opacity: 0.7 }} />
+          </div>
+
+          {/* Signature */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginTop: "20px", width: "100%" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a" }}>For MAHADEV HOLIDAYS</span>
+            <span style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "20px" }}>Digitally Signed / Authorized Signatory</span>
+          </div>
+
+          {/* Footer */}
+          <div style={{ position: "absolute", bottom: "15px", left: "45px", right: "45px", display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: "5px", fontSize: "0.6rem", color: "#94a3b8" }}>
+            <span>This is an official confirmed booking voucher.</span>
+            <span>Page 2 of 3</span>
+          </div>
+        </div>
+
+        {/* Page 3: Terms & Conditions */}
+        <div className="pdf-page-mock">
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "2px solid #1e3a8a", paddingBottom: "8px", marginBottom: "15px", width: "100%" }}>
+            <img src="/logo.jpg" alt="Logo" style={{ height: "45px", width: "auto" }} />
+            <div style={{ textAlign: "center" }}>
+              <span style={{ fontSize: "1.1rem", fontWeight: "bold", color: "#1e3a8a", letterSpacing: "1px" }}>MAHADEV HOLIDAYS</span>
+              <p style={{ fontSize: "0.55rem", color: "#475569", margin: "2px 0 0 0", maxWidth: "260px", lineHeight: "1.3" }}>
+                D/2069, Central Bazzar, Opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat, India - 395006
+              </p>
+            </div>
+            <div style={{ textAlign: "right", fontSize: "0.6rem", color: "#475569", lineHeight: "1.3" }}>
+              <span>Ph: +91 9328151481</span><br />
+              <span>mahadevholidays2000@gmail.com</span>
+            </div>
+          </div>
+
+          {/* Banner */}
+          <div style={{ backgroundColor: "#1e3a8a", borderTop: "3px solid #c5a059", padding: "6px 0", textAlign: "center", marginBottom: "15px", width: "100%" }}>
+            <span style={{ color: "#ffffff", fontSize: "0.9rem", fontWeight: "bold", letterSpacing: "1.5px" }}>TERMS & CONDITIONS</span>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
+            {data.inclusions && data.inclusions.length > 0 && (
+              <div style={{ marginBottom: "5px" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Inclusions</div>
+                {data.inclusions.map((inc, i) => (
+                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>✔  {inc}</div>
+                ))}
+              </div>
+            )}
+
+            {data.exclusions && data.exclusions.length > 0 && (
+              <div style={{ marginBottom: "5px" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Exclusions</div>
+                {data.exclusions.map((exc, i) => (
+                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>❌  {exc}</div>
+                ))}
+              </div>
+            )}
+
+            {data.paymentPolicies && data.paymentPolicies.length > 0 && (
+              <div style={{ marginBottom: "5px" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Payment Policies</div>
+                {data.paymentPolicies.map((pol, i) => (
+                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>•  {pol}</div>
+                ))}
+              </div>
+            )}
+
+            {data.cancellationPolicies && data.cancellationPolicies.length > 0 && (
+              <div style={{ marginBottom: "5px" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Cancellation Policies</div>
+                {data.cancellationPolicies.map((pol, i) => (
+                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>•  {pol}</div>
+                ))}
+              </div>
+            )}
+
+            {data.bookingTerms && data.bookingTerms.length > 0 && (
+              <div style={{ marginBottom: "5px" }}>
+                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Booking Terms</div>
+                {data.bookingTerms.map((t, i) => (
+                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>•  {t}</div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Branding logo */}
+          <div style={{ display: "flex", justifyContent: "center", margin: "15px 0", width: "100%" }}>
+            <img src="/logo.jpg" alt="Logo" style={{ height: "35px", width: "auto", opacity: 0.7 }} />
+          </div>
+
+          {/* Signature Area */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginTop: "20px", width: "100%" }}>
+            <span style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a" }}>For MAHADEV HOLIDAYS</span>
+            <span style={{ fontSize: "0.68rem", color: "#64748b", marginTop: "20px" }}>Digitally Signed / Authorized Signatory</span>
+          </div>
+
+          {/* Footer */}
+          <div style={{ position: "absolute", bottom: "15px", left: "45px", right: "45px", display: "flex", justifyContent: "space-between", borderTop: "1px solid #cbd5e1", paddingTop: "5px", fontSize: "0.6rem", color: "#94a3b8" }}>
+            <span>This is an official confirmed booking voucher.</span>
+            <span>Page 3 of 3</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="preview-sheet-container">
@@ -954,16 +1429,24 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
             borderTop: "3px solid #c5a059",
             padding: "16px 20px",
             display: "flex",
-            flexDirection: "column",
-            alignItems: "flex-start",
-            justifyContent: "center",
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-end",
             width: "100%",
             boxSizing: "border-box",
             textAlign: "left"
           }}>
-            <span style={{ fontSize: "0.65rem", color: "#cbd5e1", letterSpacing: "0.5px" }}>Here is your package for</span>
-            <h2 style={{ fontSize: "3.0rem", fontFamily: "'Playfair Display', serif", fontWeight: "bold", color: "#ffffff", letterSpacing: "1px", margin: "3px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
-            <span style={{ fontSize: "0.75rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "0.5px" }}>{(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package</span>
+            <div>
+              <span style={{ fontSize: "0.65rem", color: "#cbd5e1", letterSpacing: "0.5px" }}>Here is your package for</span>
+              <h2 style={{ fontSize: "2.8rem", fontFamily: "'Playfair Display', serif", fontWeight: "bold", color: "#ffffff", letterSpacing: "1px", margin: "3px 0", textTransform: "uppercase" }}>{(data.destination || "").toUpperCase()}</h2>
+              <span style={{ fontSize: "0.75rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "0.5px" }}>{(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package</span>
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginBottom: "3px" }}>
+              <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "1px", fontWeight: "bold" }}>TOUR CODE</span>
+              <span style={{ fontSize: "1.3rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059", marginTop: "2px" }}>
+                {data.tourCode || "0000001"}
+              </span>
+            </div>
           </div>
         </div>
 

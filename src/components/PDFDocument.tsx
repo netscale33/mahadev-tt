@@ -14,6 +14,7 @@ import {
 } from "@react-pdf/renderer";
 
 import { playfairDisplayBoldBase64, montserratBoldBase64 } from "./fontsBase64";
+import { convertNumberToWords } from "./wordsHelper";
 
 // Register custom Google Fonts for premium styling
 Font.register({
@@ -807,6 +808,17 @@ interface PDFData {
   coverImage?: string;
   hotels: HotelItem[];
   hotelLibrary?: HotelItem[];
+  tourCode?: string;
+  receiptNo?: string;
+  paymentDate?: string;
+  paymentRefId?: string;
+  paymentMode?: string;
+  paymentAmountPaid?: string;
+  paymentAmountInWords?: string;
+  paymentPaidBy?: string;
+  voucherPhone?: string;
+  voucherConfNo?: string;
+  version?: number;
 }
 
 const getAssetUrl = (path: string) => {
@@ -943,14 +955,22 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         {/* Large Cover Photo */}
         <View style={{ ...styles.coverImageContainer, height: 330, marginBottom: 15 }}>
           <Image src={data.coverImage || getAssetUrl("/goa.png")} style={styles.coverImage} />
-          <View style={styles.coverTitleOverlay}>
-            <Text style={{ fontSize: 9.5, color: "#cbd5e1", letterSpacing: 0.5, marginBottom: 2 }}>Here is your package for</Text>
-            <Text style={{ ...styles.coverTitle, fontFamily: "Playfair Display", fontSize: 36, fontWeight: "bold", color: colors.white, letterSpacing: 1.5, textTransform: "uppercase", marginVertical: 3 }}>
-              {data.destination.toUpperCase()}
-            </Text>
-            <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "bold", letterSpacing: 0.5 }}>
-              {(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package
-            </Text>
+          <View style={{ ...styles.coverTitleOverlay, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+            <View style={{ display: "flex", flexDirection: "column" }}>
+              <Text style={{ fontSize: 9.5, color: "#cbd5e1", letterSpacing: 0.5, marginBottom: 2 }}>Here is your package for</Text>
+              <Text style={{ ...styles.coverTitle, fontFamily: "Playfair Display", fontSize: 36, fontWeight: "bold", color: colors.white, letterSpacing: 1.5, textTransform: "uppercase", marginVertical: 3 }}>
+                {data.destination.toUpperCase()}
+              </Text>
+              <Text style={{ fontSize: 10, color: colors.accent, fontWeight: "bold", letterSpacing: 0.5 }}>
+                {(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package
+              </Text>
+            </View>
+            <View style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginBottom: 3 }}>
+              <Text style={{ fontSize: 8.5, color: "#cbd5e1", letterSpacing: 1, fontWeight: "bold" }}>TOUR CODE</Text>
+              <Text style={{ fontSize: 14, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent, marginTop: 2 }}>
+                {(data.tourCode || "0000001")} / Q-{(data.version || 1)}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -1585,3 +1605,604 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
     </Document>
   );
 };
+
+// ==========================================
+// NEW: VOUCHER & PAYMENT RECEIPT PDF COMPONENT
+// ==========================================
+
+export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
+  const formattedArrival = formatPDFDate(data.arrivalDate);
+  
+  // Calculate departure date
+  const departureDateObj = new Date(data.arrivalDate);
+  departureDateObj.setDate(departureDateObj.getDate() + (data.durationNights || 3));
+  const formattedDeparture = formatPDFDate(departureDateObj.toISOString().split("T")[0]);
+
+  // Calculate pricing
+  const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+  const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+  const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+  const overallTotal = baseTotal + trainTotal + flightTotal;
+
+  const paidAmount = parseFloat(data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "0")) || 0;
+  const balanceDue = overallTotal - paidAmount;
+  const paymentWords = data.paymentAmountInWords || convertNumberToWords(paidAmount.toString());
+
+  const currentTimestamp = new Date().toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  return (
+    <Document>
+      {/* PAGE 1: PAYMENT RECEIPT */}
+      <Page size="A4" style={voucherStyles.page}>
+        {/* Header */}
+        <View style={voucherStyles.header}>
+          <Image src={getAssetUrl("/logo.jpg")} style={voucherStyles.headerLogo} />
+          <View style={voucherStyles.headerCenter}>
+            <Text style={voucherStyles.headerCompany}>MAHADEV HOLIDAYS</Text>
+            <Text style={voucherStyles.headerAddress}>
+              D/2069, Central Bazzar, Opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat, India - 395006
+            </Text>
+          </View>
+          <View style={voucherStyles.headerContact}>
+            <Text style={voucherStyles.headerContactText}>Ph: +91 9328151481</Text>
+            <Text style={voucherStyles.headerContactText}>mahadevholidays2000@gmail.com</Text>
+          </View>
+        </View>
+
+        {/* Title banner */}
+        <View style={voucherStyles.banner}>
+          <Text style={voucherStyles.bannerText}>PAYMENT RECEIPT</Text>
+        </View>
+
+        {/* Receipt table */}
+        <View style={voucherStyles.table}>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Receipt No</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%", fontWeight: "bold", color: "#1e3a8a" }]}>
+              {data.receiptNo || `RCP-${data.tourCode || "0000001"}`}
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Payment Date</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%" }]}>
+              {data.paymentDate ? formatPDFDate(data.paymentDate) : formatPDFDate(new Date().toISOString().split("T")[0])}
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Reference ID / TXN ID</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%" }]}>{data.paymentRefId || "-"}</Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Paid By</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%", fontWeight: "bold" }]}>
+              {data.paymentPaidBy || data.guestName}
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Mode of Payment</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%" }]}>{data.paymentMode || "UPI"}</Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Amount Paid</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%", fontWeight: "bold", color: "#16a34a" }]}>
+              Rs. {paidAmount.toLocaleString("en-IN")}/-
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Amount in Words</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "65%", fontSize: 8 }]}>
+              {paymentWords}
+            </Text>
+          </View>
+        </View>
+
+        {/* Highlight Payment Callout Card */}
+        <View style={{
+          borderWidth: 1.5,
+          borderColor: balanceDue > 0 ? "#ef4444" : "#10b981",
+          borderRadius: 6,
+          paddingVertical: 10,
+          paddingHorizontal: 12,
+          backgroundColor: balanceDue > 0 ? "#fef2f2" : "#f0fdf4",
+          marginBottom: 15,
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center"
+        }}>
+          <View style={{ flexDirection: "column" }}>
+            <Text style={{ fontSize: 8.5, fontWeight: "bold", color: "#64748b", letterSpacing: 0.5 }}>TOTAL PACKAGE COST</Text>
+            <Text style={{ fontSize: 15, fontFamily: "Montserrat", fontWeight: "bold", color: "#0a2540", marginTop: 2 }}>
+              Rs. {overallTotal.toLocaleString("en-IN")}/-
+            </Text>
+          </View>
+          <View style={{ flexDirection: "column", alignItems: "center" }}>
+            <Text style={{ fontSize: 8.5, fontWeight: "bold", color: "#64748b", letterSpacing: 0.5 }}>AMOUNT PAID</Text>
+            <Text style={{ fontSize: 15, fontFamily: "Montserrat", fontWeight: "bold", color: "#10b981", marginTop: 2 }}>
+              Rs. {paidAmount.toLocaleString("en-IN")}/-
+            </Text>
+          </View>
+          <View style={{ flexDirection: "column", alignItems: "flex-end" }}>
+            <Text style={{ fontSize: 8.5, fontWeight: "bold", color: "#64748b", letterSpacing: 0.5 }}>BALANCE DUE</Text>
+            <Text style={{ fontSize: 15, fontFamily: "Montserrat", fontWeight: "bold", color: balanceDue > 0 ? "#ef4444" : "#10b981", marginTop: 2 }}>
+              Rs. {balanceDue.toLocaleString("en-IN")}/-
+            </Text>
+          </View>
+        </View>
+
+        {/* Section title */}
+        <View style={voucherStyles.sectionTitleBanner}>
+          <Text style={voucherStyles.sectionTitleText}>BOOKING DETAILS</Text>
+        </View>
+
+        {/* Booking details table */}
+        <View style={voucherStyles.table}>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Booking Code</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%", fontWeight: "bold", color: "#1e3a8a" }]}>
+              {data.tourCode || "0000001"}
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Quotation Revision</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%", fontWeight: "bold", color: "#b45309" }]}>
+              Quotation {data.version || 1}
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Package Name</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%" }]}>
+              {data.guestName} - {data.destination} Tour Package
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Guest Details</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%" }]}>
+              {data.guestName} ({data.numPax})
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Travel Date</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%" }]}>
+              From {formattedArrival} to {formattedDeparture} ({(data.durationNights || 3)} Nights / {(data.durationDays || 4)} Days)
+            </Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Payment Status</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%", fontWeight: "bold" }]}>
+              Paid: Rs. {paidAmount.toLocaleString("en-IN")}/-  |  Total: Rs. {overallTotal.toLocaleString("en-IN")}/-
+              {"  "}(Balance Due: Rs. {balanceDue.toLocaleString("en-IN")}/-{data.gstExtra && " + 5% GST EXTRA"})
+            </Text>
+          </View>
+        </View>
+
+        <Text style={{ fontSize: 7, color: colors.textMuted, marginTop: 15 }}>
+          Receipt Generated On: {currentTimestamp}
+        </Text>
+
+        {/* Large Centered Logo Branding */}
+        <View style={{ display: "flex", alignItems: "center", justifyContent: "center", marginVertical: 8, width: "100%" }}>
+          <Image src={getAssetUrl("/logo.jpg")} style={{ height: 48, width: "auto", opacity: 0.8 }} />
+        </View>
+
+        {/* Signature */}
+        <View style={voucherStyles.signatureBlock}>
+          <Text style={voucherStyles.signatureCompany}>For MAHADEV HOLIDAYS</Text>
+          <Text style={voucherStyles.signatureText}>Digitally Signed / Authorized Signatory</Text>
+        </View>
+
+        {/* Footer */}
+        <View style={voucherStyles.footer}>
+          <Text style={voucherStyles.footerText}>This is an official computer-generated receipt.</Text>
+          <Text style={voucherStyles.footerText}>Page 1 of 3</Text>
+        </View>
+      </Page>
+
+      {/* PAGE 2: BOOKING VOUCHER */}
+      <Page size="A4" style={voucherStyles.page}>
+        {/* Header */}
+        <View style={voucherStyles.header}>
+          <Image src={getAssetUrl("/logo.jpg")} style={voucherStyles.headerLogo} />
+          <View style={voucherStyles.headerCenter}>
+            <Text style={voucherStyles.headerCompany}>MAHADEV HOLIDAYS</Text>
+            <Text style={voucherStyles.headerAddress}>
+              D/2069, Central Bazzar, Opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat, India - 395006
+            </Text>
+          </View>
+          <View style={voucherStyles.headerContact}>
+            <Text style={voucherStyles.headerContactText}>Ph: +91 9328151481</Text>
+            <Text style={voucherStyles.headerContactText}>mahadevholidays2000@gmail.com</Text>
+          </View>
+        </View>
+
+        {/* Title banner */}
+        <View style={voucherStyles.banner}>
+          <Text style={voucherStyles.bannerText}>BOOKING VOUCHER</Text>
+        </View>
+
+        <Text style={{ fontSize: 10, fontFamily: "Montserrat", fontWeight: "bold", textAlign: "center", color: "#0a2540", marginBottom: 12 }}>
+          Booking Code: {data.tourCode || "0000001"} (Quotation {data.version || 1})   |   Travel Dates: {formattedArrival} to {formattedDeparture}
+        </Text>
+
+        {/* Guest details section */}
+        <View style={voucherStyles.sectionTitleBanner}>
+          <Text style={voucherStyles.sectionTitleText}>GUEST DETAILS</Text>
+        </View>
+        <View style={voucherStyles.table}>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Lead Passenger</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%", fontWeight: "bold" }]}>{data.guestName}</Text>
+          </View>
+          <View style={voucherStyles.tableRowEven}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Contact Number</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%" }]}>{data.voucherPhone || "-"}</Text>
+          </View>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Rooms / Pax</Text>
+            <Text style={[voucherStyles.tableCellValue, { width: "70%" }]}>
+              {data.numRooms} / {data.numPax}
+            </Text>
+          </View>
+        </View>
+
+        {/* Hotel stay details section */}
+        <View style={voucherStyles.sectionTitleBanner}>
+          <Text style={voucherStyles.sectionTitleText}>HOTEL STAY DETAILS (CONFIRMED)</Text>
+        </View>
+        <View style={voucherStyles.table}>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellHeader, { width: "35%" }]}>Hotel Name</Text>
+            <Text style={[voucherStyles.tableCellHeader, { width: "15%" }]}>Location</Text>
+            <Text style={[voucherStyles.tableCellHeader, { width: "25%" }]}>Check-In / Out</Text>
+            <Text style={[voucherStyles.tableCellHeader, { width: "13%" }]}>Conf No</Text>
+            <Text style={[voucherStyles.tableCellHeader, { width: "12%" }]}>Rooms</Text>
+          </View>
+          {(data.hotels || []).map((h, i) => (
+            <View key={i} style={i % 2 === 0 ? voucherStyles.tableRow : voucherStyles.tableRowEven}>
+              <Text style={[voucherStyles.tableCellCol, { width: "35%", fontWeight: "bold" }]}>{h.hotelName}</Text>
+              <Text style={[voucherStyles.tableCellCol, { width: "15%" }]}>{data.destination}</Text>
+              <Text style={[voucherStyles.tableCellCol, { width: "25%", fontSize: 7 }]}>
+                In: {h.hotelCheckIn ? h.hotelCheckIn.replace("T", " ") : formattedArrival}{"\n"}
+                Out: {h.hotelCheckOut ? h.hotelCheckOut.replace("T", " ") : formattedDeparture}
+              </Text>
+              <Text style={[voucherStyles.tableCellCol, { width: "13%", fontWeight: "bold", color: "#16a34a" }]}>
+                {data.voucherConfNo || "-"}
+              </Text>
+              <Text style={[voucherStyles.tableCellCol, { width: "12%" }]}>{data.numRooms}</Text>
+            </View>
+          ))}
+        </View>
+
+        {/* Travel Itinerary Summary */}
+        <View style={voucherStyles.sectionTitleBanner}>
+          <Text style={voucherStyles.sectionTitleText}>TRAVEL ITINERARY SUMMARY</Text>
+        </View>
+        <View style={voucherStyles.table}>
+          <View style={voucherStyles.tableRow}>
+            <Text style={[voucherStyles.tableCellHeader, { width: "20%" }]}>Day & Date</Text>
+            <Text style={[voucherStyles.tableCellHeader, { width: "60%" }]}>Activity Details</Text>
+            <Text style={[voucherStyles.tableCellHeader, { width: "20%" }]}>Sharing / Basis</Text>
+          </View>
+          {(data.itinerary || []).map((item, idx) => {
+            const dateObj = new Date(data.arrivalDate);
+            dateObj.setDate(dateObj.getDate() + idx);
+            const dayDateFormatted = dateObj.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+            const transferText = item.transferBasis || data.transferBasis || "PRIVATE BASIS (PVT)";
+            
+            return (
+              <View key={idx} style={idx % 2 === 0 ? voucherStyles.tableRow : voucherStyles.tableRowEven}>
+                <Text style={[voucherStyles.tableCellCol, { width: "20%", fontWeight: "bold" }]}>
+                  Day {item.day}{"\n"}
+                  {dayDateFormatted}
+                </Text>
+                <Text style={[voucherStyles.tableCellCol, { width: "60%", fontWeight: "bold", color: colors.primary }]}>
+                  {item.title}
+                </Text>
+                <Text style={[voucherStyles.tableCellCol, { width: "20%", fontSize: 7.5 }]}>
+                  {transferText === "CUSTOM BASIS" ? (item.customTransferBasis || "Custom") : transferText}
+                </Text>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Large Centered Logo Branding */}
+        <View style={{ display: "flex", alignItems: "center", justifyContent: "center", marginVertical: 8, width: "100%" }}>
+          <Image src={getAssetUrl("/logo.jpg")} style={{ height: 48, width: "auto", opacity: 0.8 }} />
+        </View>
+
+        {/* Signature */}
+        <View style={voucherStyles.signatureBlock}>
+          <Text style={voucherStyles.signatureCompany}>For MAHADEV HOLIDAYS</Text>
+          <Text style={voucherStyles.signatureText}>Digitally Signed / Authorized Signatory</Text>
+        </View>
+
+        {/* Footer */}
+        <View style={voucherStyles.footer}>
+          <Text style={voucherStyles.footerText}>This is an official confirmed booking voucher.</Text>
+          <Text style={voucherStyles.footerText}>Page 2 of 3</Text>
+        </View>
+      </Page>
+
+      {/* PAGE 3: TERMS & CONDITIONS */}
+      <Page size="A4" style={voucherStyles.page}>
+        {/* Header */}
+        <View style={voucherStyles.header}>
+          <Image src={getAssetUrl("/logo.jpg")} style={voucherStyles.headerLogo} />
+          <View style={voucherStyles.headerCenter}>
+            <Text style={voucherStyles.headerCompany}>MAHADEV HOLIDAYS</Text>
+            <Text style={voucherStyles.headerAddress}>
+              D/2069, Central Bazzar, Opp. Varachha Police Station, Varachha Main Road, Surat, Gujarat, India - 395006
+            </Text>
+          </View>
+          <View style={voucherStyles.headerContact}>
+            <Text style={voucherStyles.headerContactText}>Ph: +91 9328151481</Text>
+            <Text style={voucherStyles.headerContactText}>mahadevholidays2000@gmail.com</Text>
+          </View>
+        </View>
+
+        {/* Title banner */}
+        <View style={voucherStyles.banner}>
+          <Text style={voucherStyles.bannerText}>TERMS & CONDITIONS</Text>
+        </View>
+
+        <View style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {data.inclusions && data.inclusions.length > 0 && (
+            <View style={voucherStyles.policySection}>
+              <Text style={voucherStyles.policyTitle}>Inclusions</Text>
+              {data.inclusions.map((inc, i) => (
+                <Text key={i} style={voucherStyles.policyText}>✔  {inc}</Text>
+              ))}
+            </View>
+          )}
+
+          {data.exclusions && data.exclusions.length > 0 && (
+            <View style={voucherStyles.policySection}>
+              <Text style={voucherStyles.policyTitle}>Exclusions</Text>
+              {data.exclusions.map((exc, i) => (
+                <Text key={i} style={voucherStyles.policyText}>❌  {exc}</Text>
+              ))}
+            </View>
+          )}
+
+          {data.paymentPolicies && data.paymentPolicies.length > 0 && (
+            <View style={voucherStyles.policySection}>
+              <Text style={voucherStyles.policyTitle}>Payment Policies</Text>
+              {data.paymentPolicies.map((pol, i) => (
+                <Text key={i} style={voucherStyles.policyText}>•  {pol}</Text>
+              ))}
+            </View>
+          )}
+
+          {data.cancellationPolicies && data.cancellationPolicies.length > 0 && (
+            <View style={voucherStyles.policySection}>
+              <Text style={voucherStyles.policyTitle}>Cancellation Policies</Text>
+              {data.cancellationPolicies.map((pol, i) => (
+                <Text key={i} style={voucherStyles.policyText}>•  {pol}</Text>
+              ))}
+            </View>
+          )}
+
+          {data.bookingTerms && data.bookingTerms.length > 0 && (
+            <View style={voucherStyles.policySection}>
+              <Text style={voucherStyles.policyTitle}>Booking Terms</Text>
+              {data.bookingTerms.map((t, i) => (
+                <Text key={i} style={voucherStyles.policyText}>•  {t}</Text>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* Large Centered Logo Branding */}
+        <View style={{ display: "flex", alignItems: "center", justifyContent: "center", marginVertical: 8, width: "100%" }}>
+          <Image src={getAssetUrl("/logo.jpg")} style={{ height: 48, width: "auto", opacity: 0.8 }} />
+        </View>
+
+        {/* Signature */}
+        <View style={{ ...voucherStyles.signatureBlock, marginTop: 25 }}>
+          <Text style={voucherStyles.signatureCompany}>For MAHADEV HOLIDAYS</Text>
+          <Text style={voucherStyles.signatureText}>Digitally Signed / Authorized Signatory</Text>
+        </View>
+
+        {/* Footer */}
+        <View style={voucherStyles.footer}>
+          <Text style={voucherStyles.footerText}>This is an official confirmed booking voucher.</Text>
+          <Text style={voucherStyles.footerText}>Page 3 of 3</Text>
+        </View>
+      </Page>
+    </Document>
+  );
+};
+
+const voucherStyles = StyleSheet.create({
+  page: {
+    backgroundColor: "#ffffff",
+    fontFamily: "Helvetica",
+    paddingTop: 20,
+    paddingBottom: 25,
+    paddingHorizontal: 25,
+  },
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "#c5a059",
+    paddingBottom: 4,
+    marginBottom: 8,
+  },
+  headerLogo: {
+    height: 68,
+    width: "auto",
+  },
+  headerCenter: {
+    alignItems: "center",
+  },
+  headerCompany: {
+    fontFamily: "Montserrat",
+    fontWeight: "bold",
+    fontSize: 22,
+    color: "#0a2540",
+    letterSpacing: 1.5,
+  },
+  headerAddress: {
+    fontSize: 9,
+    color: "#475569",
+    marginTop: 2,
+    textAlign: "center",
+    maxWidth: 260,
+    lineHeight: 1.3,
+  },
+  headerContact: {
+    alignItems: "flex-end",
+  },
+  headerContactText: {
+    fontSize: 9.5,
+    color: "#475569",
+    lineHeight: 1.35,
+  },
+  banner: {
+    backgroundColor: "#0a2540",
+    borderTopWidth: 3,
+    borderTopColor: "#c5a059",
+    paddingVertical: 5,
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  bannerText: {
+    color: "#ffffff",
+    fontFamily: "Montserrat",
+    fontWeight: "bold",
+    fontSize: 16,
+    letterSpacing: 2,
+  },
+  sectionTitleBanner: {
+    backgroundColor: "#1e3a8a",
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    marginBottom: 6,
+    borderRadius: 2,
+  },
+  sectionTitleText: {
+    color: "#ffffff",
+    fontFamily: "Montserrat",
+    fontWeight: "bold",
+    fontSize: 12,
+    letterSpacing: 1.2,
+  },
+  table: {
+    width: "100%",
+    borderWidth: 1.2,
+    borderColor: "#cbd5e1",
+    borderRadius: 4,
+    overflow: "hidden",
+    marginBottom: 10,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#cbd5e1",
+  },
+  tableRowEven: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#cbd5e1",
+    backgroundColor: "#f8fafc",
+  },
+  tableCellHeader: {
+    backgroundColor: "#f1f5f9",
+    paddingVertical: 4.5,
+    paddingHorizontal: 8,
+    fontFamily: "Montserrat",
+    fontWeight: "bold",
+    fontSize: 11,
+    color: "#1e3a8a",
+    borderRightWidth: 1,
+    borderRightColor: "#cbd5e1",
+  },
+  tableCellLabel: {
+    width: "30%",
+    paddingVertical: 4.5,
+    paddingHorizontal: 8,
+    fontSize: 11,
+    fontWeight: "bold",
+    color: "#334155",
+    backgroundColor: "#f8fafc",
+    borderRightWidth: 1,
+    borderRightColor: "#cbd5e1",
+  },
+  tableCellValue: {
+    width: "70%",
+    paddingVertical: 4.5,
+    paddingHorizontal: 8,
+    fontSize: 11,
+    color: "#334155",
+  },
+  tableCellCol: {
+    paddingVertical: 4.5,
+    paddingHorizontal: 8,
+    fontSize: 10.5,
+    color: "#334155",
+    borderRightWidth: 1,
+    borderRightColor: "#cbd5e1",
+  },
+  signatureBlock: {
+    alignItems: "flex-end",
+    marginTop: 10,
+    paddingRight: 10,
+  },
+  signatureCompany: {
+    fontSize: 11.5,
+    fontFamily: "Montserrat",
+    fontWeight: "bold",
+    color: "#1e3a8a",
+    marginBottom: 3,
+  },
+  signatureText: {
+    fontSize: 9,
+    color: "#64748b",
+    marginTop: 15,
+  },
+  footer: {
+    position: "absolute",
+    bottom: 15,
+    left: 30,
+    right: 30,
+    borderTopWidth: 1,
+    borderTopColor: "#e2e8f0",
+    paddingTop: 5,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  footerText: {
+    fontSize: 9,
+    color: "#94a3b8",
+  },
+  policySection: {
+    marginBottom: 6,
+  },
+  policyTitle: {
+    fontSize: 11.5,
+    fontFamily: "Montserrat",
+    fontWeight: "bold",
+    color: "#1e3a8a",
+    backgroundColor: "#f1f5f9",
+    padding: 4,
+    marginBottom: 3,
+    textTransform: "uppercase",
+  },
+  policyText: {
+    fontSize: 9.5,
+    color: "#334155",
+    lineHeight: 1.25,
+    marginBottom: 1.5,
+    paddingLeft: 6,
+  }
+});

@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from "react";
 import { Plus, Trash2, ChevronRight, ChevronLeft, Download, Upload, Image as ImageIcon } from "lucide-react";
+import { convertNumberToWords } from "./wordsHelper";
 
 interface ServiceStatus {
   flights: boolean;
@@ -68,6 +69,17 @@ export interface PDFData {
   hotelLibrary?: HotelItem[];
   id?: string;
   isDefault?: boolean;
+  tourCode?: string;
+  receiptNo?: string;
+  paymentDate?: string;
+  paymentRefId?: string;
+  paymentMode?: string;
+  paymentAmountPaid?: string;
+  paymentAmountInWords?: string;
+  paymentPaidBy?: string;
+  voucherPhone?: string;
+  voucherConfNo?: string;
+  version?: number;
 }
 interface PackageFormProps {
   data: PDFData;
@@ -76,6 +88,7 @@ interface PackageFormProps {
   setActiveStep: (step: number) => void;
   onDownload: () => void;
   isGenerating: boolean;
+  mode?: "quotation" | "voucher";
 }
 
 const convertToBase64 = (file: File): Promise<string> => {
@@ -94,6 +107,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
   setActiveStep,
   onDownload,
   isGenerating,
+  mode = "quotation",
 }) => {
   const stepsIndicatorRef = useRef<HTMLDivElement>(null);
 
@@ -362,6 +376,238 @@ export const PackageForm: React.FC<PackageFormProps> = ({
     "Day-by-Day Itinerary",
     "Terms & Policies",
   ];
+
+  if (mode === "voucher") {
+    return (
+      <div className="form-panel-wrapper">
+        <style jsx>{`
+          .form-panel-wrapper {
+            background-color: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--shadow-sm);
+          }
+          .form-scroll-content {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+          }
+          .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            margin-bottom: 1.25rem;
+          }
+          .form-label {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          .form-input, .form-select {
+            padding: 0.55rem 0.75rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-color);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+          }
+          .form-input:focus, .form-select:focus {
+            border-color: var(--accent);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.15);
+          }
+          .form-nav-footer {
+            padding: 1rem 1.25rem;
+            background-color: var(--bg-primary);
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: center;
+          }
+          .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.88rem;
+            border-radius: var(--radius-sm);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+          }
+          .btn-accent {
+            background-color: var(--accent);
+            color: var(--primary);
+            box-shadow: var(--shadow-sm);
+          }
+          .btn-accent:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+          }
+        `}</style>
+
+        <div className="form-scroll-content">
+          <div style={{ fontSize: "1.15rem", borderBottom: "2px solid var(--accent)", paddingBottom: "0.5rem", marginBottom: "1.5rem", fontWeight: "bold", color: "var(--primary)" }}>
+            Booking Voucher & Payment Receipt Editor
+          </div>
+          
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+            {/* Passenger Count Indicator */}
+            <div style={{ backgroundColor: "rgba(197, 160, 89, 0.08)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="form-label" style={{ margin: 0, fontWeight: "bold" }}>Linked Tour / Booking Code:</span>
+              <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "1rem" }}>{data.tourCode || "0000001"}</span>
+            </div>
+
+            {/* Row 1: Receipt No & Payment Date */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Receipt Number</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.receiptNo || `RCP-${data.tourCode || "0000001"}`}
+                  onChange={(e) => handleInputChange("receiptNo", e.target.value)}
+                  placeholder="E.g. RCP-000473"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Payment Date</label>
+                <input
+                  type="date"
+                  className="form-input"
+                  value={data.paymentDate || new Date().toISOString().split("T")[0]}
+                  onChange={(e) => handleInputChange("paymentDate", e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Row 2: Reference ID & Mode of Payment */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Reference ID / Transaction ID</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.paymentRefId || "-"}
+                  onChange={(e) => handleInputChange("paymentRefId", e.target.value)}
+                  placeholder="E.g. UPI Ref Number or -"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Mode of Payment</label>
+                <select
+                  className="form-select"
+                  value={data.paymentMode || "UPI"}
+                  onChange={(e) => handleInputChange("paymentMode", e.target.value)}
+                >
+                  <option value="UPI">UPI / Google Pay / PhonePe</option>
+                  <option value="CASH">CASH</option>
+                  <option value="BANK TRANSFER">BANK TRANSFER (IMPS/NEFT/RTGS)</option>
+                  <option value="CARD">CREDIT / DEBIT CARD</option>
+                  <option value="CHEQUE">CHEQUE</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Row 3: Paid By & Client Phone */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Paid By (Client Name)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.paymentPaidBy !== undefined ? data.paymentPaidBy : data.guestName}
+                  onChange={(e) => handleInputChange("paymentPaidBy", e.target.value)}
+                  placeholder="Client Name"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Client Contact Phone</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.voucherPhone || ""}
+                  onChange={(e) => handleInputChange("voucherPhone", e.target.value)}
+                  placeholder="E.g. 9664545613"
+                />
+              </div>
+            </div>
+
+            {/* Row 4: Amount Paid & Amount in Words */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Amount Paid (Rs.)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.paymentAmountPaid !== undefined ? data.paymentAmountPaid : (data.advancePrice || "")}
+                  onChange={(e) => {
+                    const val = e.target.value.replace(/[^0-9]/g, "");
+                    onChange({
+                      ...data,
+                      paymentAmountPaid: val,
+                      paymentAmountInWords: convertNumberToWords(val),
+                    });
+                  }}
+                  placeholder="E.g. 12000"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Amount in Words</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.paymentAmountInWords !== undefined ? data.paymentAmountInWords : convertNumberToWords(data.advancePrice || "0")}
+                  onChange={(e) => handleInputChange("paymentAmountInWords", e.target.value)}
+                  placeholder="INR: Twelve Thousand Rupees Only"
+                />
+              </div>
+            </div>
+
+            {/* Row 5: Hotel Confirmation Details */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1.25rem" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Hotel Confirmation Number (Conf No)</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.voucherConfNo || "-"}
+                  onChange={(e) => handleInputChange("voucherConfNo", e.target.value)}
+                  placeholder="E.g. CONF-889312 or -"
+                />
+              </div>
+            </div>
+            
+            <div style={{ backgroundColor: "#faf6eb", padding: "1rem", borderRadius: "var(--radius-md)", border: "1px dashed var(--accent)", marginTop: "0.5rem" }}>
+              <h4 style={{ color: "var(--primary)", fontWeight: "bold", margin: "0 0 0.5rem 0", fontSize: "0.85rem" }}>VOUCHER LINKED DETAILS:</h4>
+              <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0, lineHeight: 1.45 }}>
+                This voucher pulls hotel names, dates, rooms, passenger counts, itineraries, and terms directly from the Quotation builder. Modifying these fields updates only the receipt/payment information.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="form-nav-footer">
+          <button
+            type="button"
+            className="btn btn-accent"
+            onClick={onDownload}
+            disabled={isGenerating}
+            style={{ width: "100%" }}
+          >
+            <Download size={16} />
+            {isGenerating ? "Generating Booking Voucher..." : "Download Booking Voucher PDF"}
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="form-panel-wrapper">
