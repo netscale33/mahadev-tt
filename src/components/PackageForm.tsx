@@ -20,7 +20,6 @@ interface ItineraryDay {
   image?: string;
   transferBasis?: string;
   customTransferBasis?: string;
-  trainPrice?: string;
 }
 export interface HotelItem {
   id: string;
@@ -44,7 +43,10 @@ export interface PDFData {
   vehicleType: string;
   transferBasis?: string;
   customTransferBasis?: string;
-  trainPrice?: string;
+  trainPricePerPerson?: string;
+  trainPriceTotal?: string;
+  flightPricePerPerson?: string;
+  flightPriceTotal?: string;
   pickupPoint: string;
   dropPoint: string;
   pickDrop?: string;
@@ -119,6 +121,43 @@ export const PackageForm: React.FC<PackageFormProps> = ({
       ...data,
       [field]: value,
     });
+  };
+
+  const getPaxCount = (): number => {
+    const parsed = parseInt(data.numPax);
+    return isNaN(parsed) || parsed <= 0 ? 1 : parsed;
+  };
+
+  const handlePriceChange = (field: string, value: string) => {
+    const paxCount = getPaxCount();
+    const cleanVal = value.replace(/[^0-9]/g, ""); // Keep only digits
+    const numVal = parseFloat(cleanVal) || 0;
+
+    const updatedData = { ...data };
+
+    if (field === "pricePerPerson") {
+      updatedData.pricePerPerson = cleanVal;
+      updatedData.totalPrice = cleanVal ? (numVal * paxCount).toString() : "";
+    } else if (field === "totalPrice") {
+      updatedData.totalPrice = cleanVal;
+      updatedData.pricePerPerson = cleanVal ? Math.round(numVal / paxCount).toString() : "";
+    } else if (field === "trainPricePerPerson") {
+      updatedData.trainPricePerPerson = cleanVal;
+      updatedData.trainPriceTotal = cleanVal ? (numVal * paxCount).toString() : "";
+    } else if (field === "trainPriceTotal") {
+      updatedData.trainPriceTotal = cleanVal;
+      updatedData.trainPricePerPerson = cleanVal ? Math.round(numVal / paxCount).toString() : "";
+    } else if (field === "flightPricePerPerson") {
+      updatedData.flightPricePerPerson = cleanVal;
+      updatedData.flightPriceTotal = cleanVal ? (numVal * paxCount).toString() : "";
+    } else if (field === "flightPriceTotal") {
+      updatedData.flightPriceTotal = cleanVal;
+      updatedData.flightPricePerPerson = cleanVal ? Math.round(numVal / paxCount).toString() : "";
+    } else {
+      (updatedData as any)[field] = cleanVal;
+    }
+
+    onChange(updatedData);
   };
 
   const handleServiceChange = (service: keyof ServiceStatus, value: boolean) => {
@@ -830,6 +869,8 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   <option value="SUV CAB (AC CAR)">SUV CAB (AC CAR)</option>
                   <option value="Tempo Traveller (12 Seater)">Tempo Traveller (12 Seater)</option>
                   <option value="AC Traveller (17 Seater)">AC Traveller (17 Seater)</option>
+                  <option value="FLIGHT">FLIGHT</option>
+                  <option value="TRAIN">TRAIN</option>
                   <option value="No Transport (Direct Check-in)">No Transport (Direct Check-in)</option>
                 </select>
               </div>
@@ -844,7 +885,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                       ...data,
                       transferBasis: e.target.value,
                       customTransferBasis: e.target.value !== "CUSTOM BASIS" ? "" : (data.customTransferBasis || ""),
-                      trainPrice: e.target.value !== "TRAIN BASIS (RAIL)" ? "" : (data.trainPrice || ""),
                     });
                   }}
                 >
@@ -853,6 +893,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   <option value="SIC (SEAT IN COACH)">SIC (SEAT IN COACH)</option>
                   <option value="SELF DRIVE / DIRECT">SELF DRIVE / DIRECT</option>
                   <option value="TRAIN BASIS (RAIL)">TRAIN BASIS (RAIL)</option>
+                  <option value="FLIGHT BASIS (AIR)">FLIGHT BASIS (AIR)</option>
                   <option value="NONE">NONE</option>
                   <option value="CUSTOM BASIS">CUSTOM BASIS (WRITE IN)</option>
                 </select>
@@ -867,19 +908,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                     value={data.customTransferBasis || ""}
                     onChange={(e) => handleInputChange("customTransferBasis", e.target.value)}
                     placeholder="E.g. Volvo AC Sleeper Bus, Shatabdi Express Train"
-                  />
-                </div>
-              )}
-
-              {data.transferBasis === "TRAIN BASIS (RAIL)" && (
-                <div className="form-group">
-                  <label className="form-label">Train Ticket Price (Rs.)</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    value={data.trainPrice || ""}
-                    onChange={(e) => handleInputChange("trainPrice", e.target.value)}
-                    placeholder="E.g. 3500 (Optional)"
                   />
                 </div>
               )}
@@ -1373,66 +1401,149 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   </div>
                 );
               })}
+            </div>            {/* Passenger Count Indicator */}
+            <div style={{ backgroundColor: "var(--primary-light)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", marginTop: "1.5rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span className="form-label" style={{ margin: 0, fontWeight: "bold" }}>Active Passenger Count (Pax):</span>
+              <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "1rem" }}>{getPaxCount()} {getPaxCount() === 1 ? "Person" : "People"}</span>
             </div>
 
-            <div className="form-grid" style={{ marginTop: "2rem" }}>
-              <div className="form-group">
-                <label className="form-label">Price Per Person (Rs.)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={data.pricePerPerson || ""}
-                  onChange={(e) => handleInputChange("pricePerPerson", e.target.value)}
-                  placeholder="E.g. 12500"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Total Package Price (Rs.)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={data.totalPrice || ""}
-                  onChange={(e) => handleInputChange("totalPrice", e.target.value)}
-                  placeholder="E.g. 50000"
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Advance Payment Received (Rs.)</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  value={data.advancePrice || ""}
-                  onChange={(e) => handleInputChange("advancePrice", e.target.value)}
-                  placeholder="E.g. 15000"
-                />
-              </div>
-
-              <div className="form-group" style={{ display: "flex", alignItems: "center", height: "100%", paddingTop: "1.5rem" }}>
-                <label className="checkbox-card" style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%", padding: "0.6rem 1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", cursor: "pointer", margin: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+              {/* Row 1: Base Package Price */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: "bold" }}>Base Land Package (Per Person - Rs.)</label>
                   <input
-                    type="checkbox"
-                    checked={data.gstExtra || false}
-                    onChange={(e) => handleInputChange("gstExtra", e.target.checked)}
-                    style={{ margin: 0, width: "auto", height: "auto" }}
+                    type="text"
+                    className="form-input"
+                    value={data.pricePerPerson || ""}
+                    onChange={(e) => handlePriceChange("pricePerPerson", e.target.value)}
+                    placeholder="E.g. 12500"
                   />
-                  <span className="form-label" style={{ margin: 0, fontSize: "0.82rem", cursor: "pointer" }}>5% GST Extra Applicable</span>
-                </label>
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label" style={{ fontWeight: "bold" }}>Base Land Package (Total - Rs.)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={data.totalPrice || ""}
+                    onChange={(e) => handlePriceChange("totalPrice", e.target.value)}
+                    placeholder="E.g. 50000"
+                  />
+                </div>
               </div>
 
-              <div className="form-group full-width" style={{ marginTop: "0.25rem", padding: "0.6rem 0.85rem", backgroundColor: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)" }}>
-                <span className="form-label" style={{ fontSize: "0.72rem", color: "var(--text-muted)", display: "block", margin: 0, fontWeight: "bold" }}>
-                  Calculated Balance Payment Due (Rs.):
-                </span>
-                <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "var(--primary)" }}>
-                  Rs. {(() => {
-                    const total = parseFloat(data.totalPrice) || 0;
-                    const advance = parseFloat(data.advancePrice || "0") || 0;
-                    return (total - advance).toLocaleString("en-IN");
-                  })()}
-                  {data.gstExtra && " + 5% GST Extra"}
-                </span>
+              {/* Row 2: Train Price (Optional) */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Train Ticket Price (Per Person - Rs. - Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={data.trainPricePerPerson || ""}
+                    onChange={(e) => handlePriceChange("trainPricePerPerson", e.target.value)}
+                    placeholder="E.g. 1800"
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Train Ticket Price (Total - Rs.)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={data.trainPriceTotal || ""}
+                    onChange={(e) => handlePriceChange("trainPriceTotal", e.target.value)}
+                    placeholder="E.g. 7200"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Flight Price (Optional) */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Flight Ticket Price (Per Person - Rs. - Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={data.flightPricePerPerson || ""}
+                    onChange={(e) => handlePriceChange("flightPricePerPerson", e.target.value)}
+                    placeholder="E.g. 5400"
+                  />
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Flight Ticket Price (Total - Rs.)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    value={data.flightPriceTotal || ""}
+                    onChange={(e) => handlePriceChange("flightPriceTotal", e.target.value)}
+                    placeholder="E.g. 21600"
+                  />
+                </div>
+              </div>
+
+              {/* Calculated Overall Price & Payments */}
+              <div style={{ padding: "1rem", border: "2px solid var(--accent)", borderRadius: "var(--radius-md)", backgroundColor: "#faf6eb" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem", paddingBottom: "0.5rem", borderBottom: "1px dashed var(--accent)" }}>
+                  <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "var(--primary)" }}>CALCULATED OVERALL TOTAL:</span>
+                  <span style={{ fontWeight: 900, fontSize: "1.3rem", color: "var(--primary)" }}>
+                    Rs. {(
+                      (parseFloat(data.totalPrice || "0") || 0) +
+                      (parseFloat(data.trainPriceTotal || "0") || 0) +
+                      (parseFloat(data.flightPriceTotal || "0") || 0)
+                    ).toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.25rem", color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                  <span>Overall Per Person:</span>
+                  <span style={{ fontWeight: "bold", color: "var(--primary)" }}>
+                    Rs. {(
+                      (parseFloat(data.pricePerPerson || "0") || 0) +
+                      (parseFloat(data.trainPricePerPerson || "0") || 0) +
+                      (parseFloat(data.flightPricePerPerson || "0") || 0)
+                    ).toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label" style={{ fontWeight: "bold" }}>Advance Payment Received (Rs.)</label>
+                    <input
+                      type="text"
+                      className="form-input"
+                      value={data.advancePrice || ""}
+                      onChange={(e) => handleInputChange("advancePrice", e.target.value.replace(/[^0-9]/g, ""))}
+                      placeholder="E.g. 15000"
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ margin: 0, display: "flex", alignItems: "center", height: "100%", paddingTop: "1.4rem" }}>
+                    <label className="checkbox-card" style={{ display: "flex", alignItems: "center", gap: "0.5rem", width: "100%", padding: "0.6rem 1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", cursor: "pointer", margin: 0, backgroundColor: "#ffffff" }}>
+                      <input
+                        type="checkbox"
+                        checked={data.gstExtra || false}
+                        onChange={(e) => handleInputChange("gstExtra", e.target.checked)}
+                        style={{ margin: 0, width: "auto", height: "auto" }}
+                      />
+                      <span className="form-label" style={{ margin: 0, fontSize: "0.82rem", cursor: "pointer" }}>5% GST Extra Applicable</span>
+                    </label>
+                  </div>
+                </div>
+
+                <div style={{ marginTop: "1rem", padding: "0.6rem 0.85rem", backgroundColor: "var(--bg-secondary)", borderRadius: "6px", border: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="form-label" style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: 0, fontWeight: "bold" }}>
+                    Calculated Balance Payment Due (Rs.):
+                  </span>
+                  <span style={{ fontSize: "1.1rem", fontWeight: "bold", color: "var(--error)" }}>
+                    Rs. {(() => {
+                      const totalBase = parseFloat(data.totalPrice || "0") || 0;
+                      const totalTrain = parseFloat(data.trainPriceTotal || "0") || 0;
+                      const totalFlight = parseFloat(data.flightPriceTotal || "0") || 0;
+                      const overall = totalBase + totalTrain + totalFlight;
+                      const advance = parseFloat(data.advancePrice || "0") || 0;
+                      return (overall - advance).toLocaleString("en-IN");
+                    })()}/-
+                    {data.gstExtra && <span style={{ fontSize: "0.75rem" }}> + 5% GST Extra</span>}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -1503,7 +1614,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                                 ...item,
                                 transferBasis: val,
                                 customTransferBasis: val !== "CUSTOM BASIS" ? "" : (item.customTransferBasis || ""),
-                                trainPrice: val !== "TRAIN BASIS (RAIL)" ? "" : (item.trainPrice || ""),
                               };
                             }
                             return item;
@@ -1520,6 +1630,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                         <option value="SIC (SEAT IN COACH)">SIC (SEAT IN COACH)</option>
                         <option value="SELF DRIVE / DIRECT">SELF DRIVE / DIRECT</option>
                         <option value="TRAIN BASIS (RAIL)">TRAIN BASIS (RAIL)</option>
+                        <option value="FLIGHT BASIS (AIR)">FLIGHT BASIS (AIR)</option>
                         <option value="NONE">NONE</option>
                         <option value="CUSTOM BASIS">CUSTOM BASIS (WRITE IN)</option>
                       </select>
@@ -1534,19 +1645,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                           value={dayItem.customTransferBasis || ""}
                           onChange={(e) => handleItineraryChange(index, "customTransferBasis", e.target.value)}
                           placeholder="E.g. Volvo AC Sleeper Bus, Shatabdi Express Train"
-                        />
-                      </div>
-                    )}
-
-                    {dayItem.transferBasis === "TRAIN BASIS (RAIL)" && (
-                      <div className="form-group">
-                        <label className="form-label">Train Price for this Day (Rs.)</label>
-                        <input
-                          type="text"
-                          className="form-input"
-                          value={dayItem.trainPrice || ""}
-                          onChange={(e) => handleItineraryChange(index, "trainPrice", e.target.value)}
-                          placeholder="E.g. 1200 (Optional)"
                         />
                       </div>
                     )}

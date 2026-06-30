@@ -761,7 +761,6 @@ interface ItineraryDay {
   image?: string;
   transferBasis?: string;
   customTransferBasis?: string;
-  trainPrice?: string;
 }
 
 interface HotelItem {
@@ -786,7 +785,10 @@ interface PDFData {
   vehicleType: string;
   transferBasis?: string;
   customTransferBasis?: string;
-  trainPrice?: string;
+  trainPricePerPerson?: string;
+  trainPriceTotal?: string;
+  flightPricePerPerson?: string;
+  flightPriceTotal?: string;
   pickupPoint: string;
   dropPoint: string;
   pickDrop?: string;
@@ -909,11 +911,11 @@ const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, d
     : selectedBasis;
   
   if (selectedBasis === "TRAIN BASIS (RAIL)") {
-    const price = dayItem ? dayItem.trainPrice : data.trainPrice;
-    if (price) {
-      return `RAIL: TRAIN BASIS (RAIL) (Price: Rs. ${price}/-)`;
-    }
     return "RAIL: TRAIN BASIS (RAIL)";
+  }
+  
+  if (selectedBasis === "FLIGHT BASIS (AIR)") {
+    return "AIR: FLIGHT BASIS (AIR)";
   }
   
   if (basis === "NONE") {
@@ -1152,51 +1154,91 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         <Text style={styles.sectionHeader}>Package Pricing Details</Text>
 
         {/* Pricing Panel - Placed FIRST on Page 2 */}
-        <View style={styles.priceContainer}>
-          <View style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginBottom: 6 }}>
-            <Text style={{ fontSize: 9.5, fontWeight: "bold", letterSpacing: 1, textTransform: "uppercase", color: colors.textMuted, marginBottom: 3 }}>
-              TOTAL PACKAGE PRICE
-            </Text>
-            <Text style={[styles.priceTotal, { textAlign: "center" }]}>
-              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
-            </Text>
-            {data.gstExtra && (
-              <Text style={{ fontSize: 8.5, fontWeight: "bold", color: colors.accent, marginTop: 2, letterSpacing: 0.5 }}>
-                (GST 5% EXTRA APPLICABLE)
-              </Text>
-            )}
-          </View>
-          
-          {data.pricePerPerson && (
-            <>
+        {(() => {
+          const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+          const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+          const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+          const overallTotal = baseTotal + trainTotal + flightTotal;
+
+          const basePerPerson = parseFloat(data.pricePerPerson || "0") || 0;
+          const trainPerPerson = parseFloat(data.trainPricePerPerson || "0") || 0;
+          const flightPerPerson = parseFloat(data.flightPricePerPerson || "0") || 0;
+          const overallPerPerson = basePerPerson + trainPerPerson + flightPerPerson;
+
+          const advance = parseFloat(data.advancePrice || "0") || 0;
+          const balance = overallTotal - advance;
+
+          return (
+            <View style={styles.priceContainer}>
+              <View style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginBottom: 6 }}>
+                <Text style={{ fontSize: 9.5, fontWeight: "bold", letterSpacing: 1, textTransform: "uppercase", color: colors.textMuted, marginBottom: 3 }}>
+                  OVERALL PACKAGE PRICE (TOTAL)
+                </Text>
+                <Text style={[styles.priceTotal, { textAlign: "center" }]}>
+                  Rs. {overallTotal.toLocaleString("en-IN")}/-
+                </Text>
+                <Text style={{ fontSize: 9, fontWeight: "bold", color: colors.accent, marginTop: 2, letterSpacing: 0.5 }}>
+                  Overall Per Person: Rs. {overallPerPerson.toLocaleString("en-IN")}/-
+                </Text>
+                {data.gstExtra && (
+                  <Text style={{ fontSize: 8.5, fontWeight: "bold", color: colors.accent, marginTop: 2, letterSpacing: 0.5 }}>
+                    (GST 5% EXTRA APPLICABLE)
+                  </Text>
+                )}
+              </View>
+
               <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
+              
               <View style={styles.priceRow}>
-                <Text style={styles.priceLabelSmall}>PRICE PER PERSON :</Text>
-                <Text style={{ fontSize: 11.5, fontWeight: "bold", color: colors.primary }}>
-                  Rs. {parseFloat(data.pricePerPerson || "0").toLocaleString("en-IN")}/-
-                  {data.gstExtra && " (GST 5% EXTRA)"}
+                <Text style={styles.priceLabelSmall}>1. LAND PACKAGE PRICE :</Text>
+                <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
+                  Rs. {basePerPerson.toLocaleString("en-IN")} PP | Total: Rs. {baseTotal.toLocaleString("en-IN")}/-
                 </Text>
               </View>
-            </>
-          )}
-          
-          <View style={styles.priceRowDivider} />
-          
-          <View style={styles.priceRow}>
-            <Text style={styles.priceLabelSmall}>ADVANCE PAYMENT RECEIVED :</Text>
-            <Text style={styles.priceValueGreen}>Rs. {parseFloat(data.advancePrice || "0").toLocaleString("en-IN")}/-</Text>
-          </View>
-          
-          <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
-          
-          <View style={styles.priceRow}>
-            <Text style={{ ...styles.priceLabel, fontSize: 11.5 }}>BALANCE PAYMENT DUE :</Text>
-            <Text style={styles.priceValueRed}>
-              Rs. {((parseFloat(data.totalPrice || "0") || 0) - (parseFloat(data.advancePrice || "0") || 0)).toLocaleString("en-IN")}/-
-              {data.gstExtra && " + 5% GST EXTRA"}
-            </Text>
-          </View>
-        </View>
+
+              {trainTotal > 0 && (
+                <>
+                  <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabelSmall}>2. TRAIN TICKET PRICE :</Text>
+                    <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
+                      Rs. {trainPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {trainTotal.toLocaleString("en-IN")}/-
+                    </Text>
+                  </View>
+                </>
+              )}
+
+              {flightTotal > 0 && (
+                <>
+                  <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabelSmall}>3. FLIGHT TICKET PRICE :</Text>
+                    <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
+                      Rs. {flightPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {flightTotal.toLocaleString("en-IN")}/-
+                    </Text>
+                  </View>
+                </>
+              )}
+
+              <View style={styles.priceRowDivider} />
+              
+              <View style={styles.priceRow}>
+                <Text style={styles.priceLabelSmall}>ADVANCE PAYMENT RECEIVED :</Text>
+                <Text style={styles.priceValueGreen}>Rs. {advance.toLocaleString("en-IN")}/-</Text>
+              </View>
+
+              <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
+              
+              <View style={styles.priceRow}>
+                <Text style={{ ...styles.priceLabel, fontSize: 11.5 }}>BALANCE PAYMENT DUE :</Text>
+                <Text style={styles.priceValueRed}>
+                  Rs. {balance.toLocaleString("en-IN")}/-
+                  {data.gstExtra && " + 5% GST EXTRA"}
+                </Text>
+              </View>
+            </View>
+          );
+        })()}
 
         <Text style={styles.sectionHeader}>Hotel Stay Details</Text>
 

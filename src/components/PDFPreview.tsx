@@ -32,7 +32,6 @@ interface ItineraryDay {
   image?: string;
   transferBasis?: string;
   customTransferBasis?: string;
-  trainPrice?: string;
 }
 
 interface PDFData {
@@ -46,7 +45,10 @@ interface PDFData {
   vehicleType: string;
   transferBasis?: string;
   customTransferBasis?: string;
-  trainPrice?: string;
+  trainPricePerPerson?: string;
+  trainPriceTotal?: string;
+  flightPricePerPerson?: string;
+  flightPriceTotal?: string;
   pickupPoint: string;
   dropPoint: string;
   pickDrop?: string;
@@ -138,11 +140,11 @@ const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, d
     : selectedBasis;
   
   if (selectedBasis === "TRAIN BASIS (RAIL)") {
-    const price = dayItem ? dayItem.trainPrice : data.trainPrice;
-    if (price) {
-      return `RAIL: TRAIN BASIS (RAIL) (Price: Rs. ${price}/-)`;
-    }
     return "RAIL: TRAIN BASIS (RAIL)";
+  }
+  
+  if (selectedBasis === "FLIGHT BASIS (AIR)") {
+    return "AIR: FLIGHT BASIS (AIR)";
   }
   
   if (basis === "NONE") {
@@ -1145,46 +1147,82 @@ export const PDFPreview: React.FC<{ data: PDFData }> = ({ data }) => {
         <div className="page-title">Package Pricing Details</div>
 
         {/* Pricing Summary Card */}
-        <div className="price-card-box" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px 24px", border: "4px solid #c5a059", borderRadius: "12px", backgroundColor: "#faf6eb", marginBottom: "20px" }}>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", borderBottom: "1px dashed #c5a059", paddingBottom: "10px", marginBottom: "4px" }}>
-            <span style={{ fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", color: "#64748b", marginBottom: "4px" }}>
-              TOTAL PACKAGE PRICE
-            </span>
-            <span style={{ fontSize: "2rem", fontWeight: "bold", color: "#0a2540", textAlign: "center", lineHeight: 1.1 }}>
-              Rs. {parseFloat(data.totalPrice || "0").toLocaleString("en-IN")}/-
-            </span>
-            {data.gstExtra && (
-              <span style={{ fontSize: "0.72rem", color: "#c5a059", fontWeight: "bold", marginTop: "4px", letterSpacing: "0.5px" }}>
-                (GST 5% EXTRA APPLICABLE)
-              </span>
-            )}
-          </div>
+        {(() => {
+          const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+          const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+          const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+          const overallTotal = baseTotal + trainTotal + flightTotal;
 
-          {data.pricePerPerson && (
-            <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
-              <span className="price-label-text" style={{ fontSize: "0.85rem", color: "#64748b" }}>PRICE PER PERSON :</span>
-              <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#c5a059" }}>
-                Rs. {parseFloat(data.pricePerPerson || "0").toLocaleString("en-IN")}/-
-                {data.gstExtra && <span style={{ fontSize: "0.75rem", marginLeft: "4px" }}>(GST 5% EXTRA)</span>}
-              </span>
+          const basePerPerson = parseFloat(data.pricePerPerson || "0") || 0;
+          const trainPerPerson = parseFloat(data.trainPricePerPerson || "0") || 0;
+          const flightPerPerson = parseFloat(data.flightPricePerPerson || "0") || 0;
+          const overallPerPerson = basePerPerson + trainPerPerson + flightPerPerson;
+
+          const advance = parseFloat(data.advancePrice || "0") || 0;
+          const balance = overallTotal - advance;
+
+          return (
+            <div className="price-card-box" style={{ display: "flex", flexDirection: "column", gap: "8px", padding: "18px 24px", border: "4px solid #c5a059", borderRadius: "12px", backgroundColor: "#faf6eb", marginBottom: "20px" }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", borderBottom: "1px dashed #c5a059", paddingBottom: "10px", marginBottom: "6px" }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: "bold", letterSpacing: "1px", textTransform: "uppercase", color: "#64748b", marginBottom: "4px" }}>
+                  OVERALL PACKAGE PRICE (TOTAL)
+                </span>
+                <span style={{ fontSize: "2rem", fontWeight: "bold", color: "#0a2540", textAlign: "center", lineHeight: 1.1 }}>
+                  Rs. {overallTotal.toLocaleString("en-IN")}/-
+                </span>
+                <span style={{ fontSize: "0.85rem", fontWeight: "bold", color: "#c5a059", marginTop: "4px" }}>
+                  Overall Per Person: Rs. {overallPerPerson.toLocaleString("en-IN")}/-
+                </span>
+                {data.gstExtra && (
+                  <span style={{ fontSize: "0.72rem", color: "#c5a059", fontWeight: "bold", marginTop: "4px", letterSpacing: "0.5px" }}>
+                    (GST 5% EXTRA APPLICABLE)
+                  </span>
+                )}
+              </div>
+
+              {/* Price Components Breakdown */}
+              <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
+                <span className="price-label-text" style={{ fontSize: "0.82rem", color: "#64748b" }}>1. LAND PACKAGE PRICE :</span>
+                <span style={{ fontSize: "0.92rem", fontWeight: "bold", color: "#0a2540" }}>
+                  Rs. {basePerPerson.toLocaleString("en-IN")} PP | Total: Rs. {baseTotal.toLocaleString("en-IN")}/-
+                </span>
+              </div>
+
+              {trainTotal > 0 && (
+                <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
+                  <span className="price-label-text" style={{ fontSize: "0.82rem", color: "#64748b" }}>2. TRAIN TICKET PRICE :</span>
+                  <span style={{ fontSize: "0.92rem", fontWeight: "bold", color: "#0a2540" }}>
+                    Rs. {trainPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {trainTotal.toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+              )}
+
+              {flightTotal > 0 && (
+                <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
+                  <span className="price-label-text" style={{ fontSize: "0.82rem", color: "#64748b" }}>3. FLIGHT TICKET PRICE :</span>
+                  <span style={{ fontSize: "0.92rem", fontWeight: "bold", color: "#0a2540" }}>
+                    Rs. {flightPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {flightTotal.toLocaleString("en-IN")}/-
+                  </span>
+                </div>
+              )}
+
+              <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px", marginTop: "4px" }}>
+                <span className="price-label-text" style={{ fontSize: "0.85rem", color: "#64748b" }}>ADVANCE PAYMENT RECEIVED :</span>
+                <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#065f46" }}>
+                  Rs. {advance.toLocaleString("en-IN")}/-
+                </span>
+              </div>
+
+              <div className="price-row-item" style={{ marginTop: "4px" }}>
+                <span className="price-label-text" style={{ fontSize: "0.95rem", color: "#0a2540", fontWeight: "800" }}>BALANCE PAYMENT DUE :</span>
+                <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#b91c1c" }}>
+                  Rs. {balance.toLocaleString("en-IN")}/-
+                  {data.gstExtra && <span style={{ fontSize: "0.8rem", color: "#b91c1c", marginLeft: "4px" }}>+ 5% GST EXTRA</span>}
+                </span>
+              </div>
             </div>
-          )}
-          
-          <div className="price-row-item" style={{ borderBottom: "1px dashed #cbd5e1", paddingBottom: "4px" }}>
-            <span className="price-label-text" style={{ fontSize: "0.85rem", color: "#64748b" }}>ADVANCE PAYMENT RECEIVED :</span>
-            <span style={{ fontSize: "1.05rem", fontWeight: "bold", color: "#065f46" }}>
-              Rs. {parseFloat(data.advancePrice || "0").toLocaleString("en-IN")}/-
-            </span>
-          </div>
-
-          <div className="price-row-item">
-            <span className="price-label-text" style={{ fontSize: "0.95rem", color: "#0a2540", fontWeight: "800" }}>BALANCE PAYMENT DUE :</span>
-            <span style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#b91c1c" }}>
-              Rs. {((parseFloat(data.totalPrice || "0") || 0) - (parseFloat(data.advancePrice || "0") || 0)).toLocaleString("en-IN")}/-
-              {data.gstExtra && <span style={{ fontSize: "0.8rem", color: "#b91c1c", marginLeft: "4px" }}>+ 5% GST EXTRA</span>}
-            </span>
-          </div>
-        </div>
+          );
+        })()}
 
         {/* Hotel Stay Cards - Placed BELOW Pricing Card */}
         {data.hotels && data.hotels.map((hotel, index) => {
