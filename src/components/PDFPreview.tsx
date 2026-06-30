@@ -568,24 +568,33 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
             <span style={{ color: "#ffffff", fontSize: "0.9rem", fontWeight: "bold", letterSpacing: "1.5px" }}>TERMS & CONDITIONS</span>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%" }}>
-            {data.inclusions && data.inclusions.length > 0 && (
-              <div style={{ marginBottom: "5px" }}>
-                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Inclusions</div>
-                {data.inclusions.map((inc, i) => (
+          <div style={{ display: "flex", gap: "15px", width: "100%", marginBottom: "5px" }}>
+            {/* Inclusions */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#16a34a", backgroundColor: "#f0fdf4", padding: "4px 8px", marginBottom: "4px", textTransform: "uppercase" }}>Inclusions</div>
+              {data.inclusions && data.inclusions.length > 0 ? (
+                data.inclusions.map((inc, i) => (
                   <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>✔  {inc}</div>
-                ))}
-              </div>
-            )}
+                ))
+              ) : (
+                <div style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>• No inclusions specified</div>
+              )}
+            </div>
 
-            {data.exclusions && data.exclusions.length > 0 && (
-              <div style={{ marginBottom: "5px" }}>
-                <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#1e3a8a", backgroundColor: "#f1f5f9", padding: "3px 6px", marginBottom: "4px", textTransform: "uppercase" }}>Exclusions</div>
-                {data.exclusions.map((exc, i) => (
-                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>❌  {exc}</div>
-                ))}
-              </div>
-            )}
+            {/* Exclusions */}
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: "0.75rem", fontWeight: "bold", color: "#ef4444", backgroundColor: "#fef2f2", padding: "4px 8px", marginBottom: "4px", textTransform: "uppercase" }}>Exclusions</div>
+              {data.exclusions && data.exclusions.length > 0 ? (
+                data.exclusions.map((exc, i) => (
+                  <div key={i} style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>✘  {exc}</div>
+                ))
+              ) : (
+                <div style={{ fontSize: "0.68rem", color: "#334155", marginBottom: "2px", paddingLeft: "5px" }}>• No exclusions specified</div>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%" }}>
 
             {data.paymentPolicies && data.paymentPolicies.length > 0 && (
               <div style={{ marginBottom: "5px" }}>

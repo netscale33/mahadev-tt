@@ -1950,27 +1950,34 @@ export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data 
         {/* Title banner */}
         <View style={voucherStyles.banner}>
           <Text style={voucherStyles.bannerText}>TERMS & CONDITIONS</Text>
+        </View>        {/* Two Column Layout for Inclusions & Exclusions */}
+        <View style={{ flexDirection: "row", gap: 15, marginBottom: 8 }}>
+          {/* Inclusions */}
+          <View style={{ flex: 1, ...voucherStyles.policySection }}>
+            <Text style={[voucherStyles.policyTitle, { backgroundColor: "#f0fdf4", color: "#16a34a" }]}>Inclusions</Text>
+            {data.inclusions && data.inclusions.length > 0 ? (
+              data.inclusions.map((inc, i) => (
+                <Text key={i} style={voucherStyles.policyText}>✔  {inc}</Text>
+              ))
+            ) : (
+              <Text style={voucherStyles.policyText}>• No inclusions specified</Text>
+            )}
+          </View>
+
+          {/* Exclusions */}
+          <View style={{ flex: 1, ...voucherStyles.policySection }}>
+            <Text style={[voucherStyles.policyTitle, { backgroundColor: "#fef2f2", color: "#ef4444" }]}>Exclusions</Text>
+            {data.exclusions && data.exclusions.length > 0 ? (
+              data.exclusions.map((exc, i) => (
+                <Text key={i} style={voucherStyles.policyText}>✘  {exc}</Text>
+              ))
+            ) : (
+              <Text style={voucherStyles.policyText}>• No exclusions specified</Text>
+            )}
+          </View>
         </View>
 
-        <View style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-          {data.inclusions && data.inclusions.length > 0 && (
-            <View style={voucherStyles.policySection}>
-              <Text style={voucherStyles.policyTitle}>Inclusions</Text>
-              {data.inclusions.map((inc, i) => (
-                <Text key={i} style={voucherStyles.policyText}>✔  {inc}</Text>
-              ))}
-            </View>
-          )}
-
-          {data.exclusions && data.exclusions.length > 0 && (
-            <View style={voucherStyles.policySection}>
-              <Text style={voucherStyles.policyTitle}>Exclusions</Text>
-              {data.exclusions.map((exc, i) => (
-                <Text key={i} style={voucherStyles.policyText}>❌  {exc}</Text>
-              ))}
-            </View>
-          )}
-
+        <View style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {data.paymentPolicies && data.paymentPolicies.length > 0 && (
             <View style={voucherStyles.policySection}>
               <Text style={voucherStyles.policyTitle}>Payment Policies</Text>
