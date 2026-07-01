@@ -38,8 +38,19 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Mahadev Holidays" />
-        <link rel="apple-touch-icon" href="/logo.jpg" />
-        <link rel="apple-touch-startup-image" href="/logo.jpg" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="apple-touch-icon" href="/logo-192.png" />
+        <link rel="icon" href="/logo-192.png" sizes="192x192" type="image/png" />
+        <link rel="icon" href="/logo-512.png" sizes="512x512" type="image/png" />
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            window.__deferredPrompt = null;
+            window.addEventListener('beforeinstallprompt', (e) => {
+              e.preventDefault();
+              window.__deferredPrompt = e;
+            });
+          `
+        }} />
       </head>
       <body>{children}</body>
     </html>

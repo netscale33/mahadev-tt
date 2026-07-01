@@ -527,7 +527,11 @@ export default function TravelPortal() {
       }).catch((err) => console.error("SW registration failed:", err));
     }
 
-    // PWA install prompt handler
+    // PWA install prompt - check if already captured globally
+    const capturedPrompt = (window as any).__deferredPrompt;
+    if (capturedPrompt) {
+      setInstallPrompt(capturedPrompt);
+    }
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setInstallPrompt(e);
