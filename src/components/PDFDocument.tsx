@@ -1163,7 +1163,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
         </View>
       </Page>
 
-      {/* PAGE 2: PRICING & HOTEL STAY DETAILS (HOTEL BELOW PRICING BANNERS) */}
+      {/* PAGE 2: PRICING (DEDICATED FULL PAGE - VERTICALLY CENTERED) */}
       <Page size="A4" style={styles.page}>
         <View style={styles.header} fixed>
           <View style={styles.headerMain}>
@@ -1171,94 +1171,138 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           </View>
         </View>
 
-        <Text style={styles.sectionHeader}>Package Pricing Details</Text>
+        {/* Vertically centered pricing block */}
+        <View style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", width: "100%" }}>
+          {(() => {
+            const baseTotal = parseFloat(data.totalPrice || "0") || 0;
+            const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
+            const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
+            const overallTotal = baseTotal + trainTotal + flightTotal;
 
-        {/* Pricing Panel - Placed FIRST on Page 2 */}
-        {(() => {
-          const baseTotal = parseFloat(data.totalPrice || "0") || 0;
-          const trainTotal = parseFloat(data.trainPriceTotal || "0") || 0;
-          const flightTotal = parseFloat(data.flightPriceTotal || "0") || 0;
-          const overallTotal = baseTotal + trainTotal + flightTotal;
+            const basePerPerson = parseFloat(data.pricePerPerson || "0") || 0;
+            const trainPerPerson = parseFloat(data.trainPricePerPerson || "0") || 0;
+            const flightPerPerson = parseFloat(data.flightPricePerPerson || "0") || 0;
+            const overallPerPerson = basePerPerson + trainPerPerson + flightPerPerson;
 
-          const basePerPerson = parseFloat(data.pricePerPerson || "0") || 0;
-          const trainPerPerson = parseFloat(data.trainPricePerPerson || "0") || 0;
-          const flightPerPerson = parseFloat(data.flightPricePerPerson || "0") || 0;
-          const overallPerPerson = basePerPerson + trainPerPerson + flightPerPerson;
+            const advance = parseFloat(data.advancePrice || "0") || 0;
+            const balance = overallTotal - advance;
 
-          const advance = parseFloat(data.advancePrice || "0") || 0;
-          const balance = overallTotal - advance;
-
-          return (
-            <View style={styles.priceContainer}>
-              <View style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginBottom: 6 }}>
-                <Text style={{ fontSize: 9.5, fontWeight: "bold", letterSpacing: 1, textTransform: "uppercase", color: colors.textMuted, marginBottom: 3 }}>
-                  OVERALL PACKAGE PRICE (TOTAL)
-                </Text>
-                <Text style={[styles.priceTotal, { textAlign: "center" }]}>
-                  Rs. {overallTotal.toLocaleString("en-IN")}/-
-                </Text>
-                <Text style={{ fontSize: 9, fontWeight: "bold", color: colors.accent, marginTop: 2, letterSpacing: 0.5 }}>
-                  Overall Per Person: Rs. {overallPerPerson.toLocaleString("en-IN")}/-
-                </Text>
-                {data.gstExtra && (
-                  <Text style={{ fontSize: 8.5, fontWeight: "bold", color: colors.accent, marginTop: 2, letterSpacing: 0.5 }}>
-                    (GST 5% EXTRA APPLICABLE)
+            return (
+              <View style={{
+                backgroundColor: colors.accentLight,
+                borderWidth: 4,
+                borderColor: colors.accent,
+                borderRadius: 14,
+                padding: "35 40",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                width: "90%",
+              }}>
+                <View style={{ display: "flex", flexDirection: "column", alignItems: "center", width: "100%", marginBottom: 12 }}>
+                  <Text style={{ fontSize: 13, fontFamily: "Montserrat", fontWeight: "bold", letterSpacing: 1.5, textTransform: "uppercase", color: colors.textMuted, marginBottom: 5 }}>
+                    OVERALL PACKAGE PRICE (TOTAL)
                   </Text>
+                  <Text style={{ fontSize: 38, fontFamily: "Montserrat", fontWeight: "bold", color: colors.primary, textAlign: "center" }}>
+                    Rs. {overallTotal.toLocaleString("en-IN")}/-
+                  </Text>
+                  <Text style={{ fontSize: 15, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent, marginTop: 4, letterSpacing: 0.5 }}>
+                    Overall Per Person: Rs. {overallPerPerson.toLocaleString("en-IN")}/-
+                  </Text>
+                  {data.gstExtra && (
+                    <Text style={{ fontSize: 11, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent, marginTop: 4, letterSpacing: 0.5 }}>
+                      (GST 5% EXTRA APPLICABLE)
+                    </Text>
+                  )}
+                </View>
+
+                <View style={{ borderBottomWidth: 1.5, borderBottomColor: colors.accent, borderBottomStyle: "dashed", width: "100%", marginVertical: 12 }} />
+                
+                <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", paddingVertical: 5 }}>
+                  <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: "bold" }}>1. LAND PACKAGE PRICE :</Text>
+                  <Text style={{ fontSize: 12, fontWeight: "bold", color: colors.primary }}>
+                    Rs. {basePerPerson.toLocaleString("en-IN")} PP | Total: Rs. {baseTotal.toLocaleString("en-IN")}/-
+                  </Text>
+                </View>
+
+                {trainTotal > 0 && (
+                  <>
+                    <View style={{ borderBottomWidth: 1, borderBottomColor: colors.accent, borderBottomStyle: "dashed", width: "100%", marginVertical: 5 }} />
+                    <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", paddingVertical: 5 }}>
+                      <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: "bold" }}>2. TRAIN TICKET PRICE :</Text>
+                      <Text style={{ fontSize: 12, fontWeight: "bold", color: colors.primary }}>
+                        Rs. {trainPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {trainTotal.toLocaleString("en-IN")}/-
+                      </Text>
+                    </View>
+                  </>
                 )}
+
+                {flightTotal > 0 && (
+                  <>
+                    <View style={{ borderBottomWidth: 1, borderBottomColor: colors.accent, borderBottomStyle: "dashed", width: "100%", marginVertical: 5 }} />
+                    <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", paddingVertical: 5 }}>
+                      <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: "bold" }}>3. FLIGHT TICKET PRICE :</Text>
+                      <Text style={{ fontSize: 12, fontWeight: "bold", color: colors.primary }}>
+                        Rs. {flightPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {flightTotal.toLocaleString("en-IN")}/-
+                      </Text>
+                    </View>
+                  </>
+                )}
+
+                <View style={{ borderBottomWidth: 1.5, borderBottomColor: colors.accent, borderBottomStyle: "dashed", width: "100%", marginVertical: 10 }} />
+                
+                <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", paddingVertical: 5 }}>
+                  <Text style={{ fontSize: 11, color: colors.textMuted, fontWeight: "bold" }}>ADVANCE PAYMENT RECEIVED :</Text>
+                  <Text style={{ fontSize: 14, fontWeight: "bold", color: "#047857" }}>Rs. {advance.toLocaleString("en-IN")}/-</Text>
+                </View>
+
+                <View style={{ borderBottomWidth: 1.5, borderBottomColor: colors.accent, borderBottomStyle: "dashed", width: "100%", marginVertical: 5 }} />
+                
+                <View style={{ display: "flex", flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "100%", paddingVertical: 5 }}>
+                  <Text style={{ fontSize: 13, color: colors.primary, fontWeight: "bold" }}>BALANCE PAYMENT DUE :</Text>
+                  <Text style={{ fontSize: 16, fontWeight: "bold", color: "#b91c1c" }}>
+                    Rs. {balance.toLocaleString("en-IN")}/-
+                    {data.gstExtra && " + 5% GST"}
+                  </Text>
+                </View>
               </View>
+            );
+          })()}
+        </View>
 
-              <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
-              
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabelSmall}>1. LAND PACKAGE PRICE :</Text>
-                <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
-                  Rs. {basePerPerson.toLocaleString("en-IN")} PP | Total: Rs. {baseTotal.toLocaleString("en-IN")}/-
-                </Text>
-              </View>
+        {/* Footer */}
+        <View style={styles.footer} fixed>
+          <View style={styles.footerLeft}>
+            <Image src={getAssetUrl("/logo.jpg")} style={styles.footerLogo} />
+          </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>OUR ACHIEVEMENTS</Text>
+            <Text style={styles.footerColText}>Estd: 2022</Text>
+            <Text style={styles.footerColText}>Govt Approved Tour Operator</Text>
+          </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>LEGAL INFO</Text>
+            <Text style={styles.footerColText}>Approved by Ministry of Tourism</Text>
+            <Text style={styles.footerColText}>Government of India</Text>
+          </View>
+          <View style={styles.footerCol}>
+            <Text style={styles.footerColTitle}>TOUR ADVISOR</Text>
+            <Text style={styles.footerColText}>VISHAL CHAUHAN (DARJI)</Text>
+            <Text style={styles.footerColText}>Ph: 9328151481</Text>
+            <Text style={styles.footerColText}>mahadevholidays2000@gmail.com</Text>
+          </View>
+          <Text style={styles.pageBadge} render={({ pageNumber, totalPages }) => `Page ${pageNumber}/${totalPages}`} />
+        </View>
+      </Page>
 
-              {trainTotal > 0 && (
-                <>
-                  <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabelSmall}>2. TRAIN TICKET PRICE :</Text>
-                    <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
-                      Rs. {trainPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {trainTotal.toLocaleString("en-IN")}/-
-                    </Text>
-                  </View>
-                </>
-              )}
-
-              {flightTotal > 0 && (
-                <>
-                  <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabelSmall}>3. FLIGHT TICKET PRICE :</Text>
-                    <Text style={{ fontSize: 10, fontWeight: "bold", color: colors.primary }}>
-                      Rs. {flightPerPerson.toLocaleString("en-IN")} PP | Total: Rs. {flightTotal.toLocaleString("en-IN")}/-
-                    </Text>
-                  </View>
-                </>
-              )}
-
-              <View style={styles.priceRowDivider} />
-              
-              <View style={styles.priceRow}>
-                <Text style={styles.priceLabelSmall}>ADVANCE PAYMENT RECEIVED :</Text>
-                <Text style={styles.priceValueGreen}>Rs. {advance.toLocaleString("en-IN")}/-</Text>
-              </View>
-
-              <View style={[styles.priceRowDivider, { borderBottomColor: "#cbd5e1" }]} />
-              
-              <View style={styles.priceRow}>
-                <Text style={{ ...styles.priceLabel, fontSize: 11.5 }}>BALANCE PAYMENT DUE :</Text>
-                <Text style={styles.priceValueRed}>
-                  Rs. {balance.toLocaleString("en-IN")}/-
-                  {data.gstExtra && " + 5% GST EXTRA"}
-                </Text>
-              </View>
-            </View>
-          );
-        })()}
+      {/* PAGE 3: HOTEL STAY DETAILS (DEDICATED FULL PAGE) */}
+      <Page size="A4" style={styles.page}>
+        <View style={styles.header} fixed>
+          <View style={styles.headerMain}>
+            <Image src={getAssetUrl("/logo.jpg")} style={styles.logo} />
+          </View>
+        </View>
 
         <Text style={styles.sectionHeader}>Hotel Stay Details</Text>
 
@@ -1305,7 +1349,7 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
           );
         })}
 
-        {/* Footer with Columns Layout (GSTIN removed) */}
+        {/* Footer */}
         <View style={styles.footer} fixed>
           <View style={styles.footerLeft}>
             <Image src={getAssetUrl("/logo.jpg")} style={styles.footerLogo} />
