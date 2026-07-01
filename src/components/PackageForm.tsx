@@ -480,7 +480,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
             {/* Row 1: Tour Code, Quotation No. & Receipt No */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.25rem" }}>
+            <div className="voucher-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Tour Code</label>
                 <input
@@ -514,7 +514,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
             </div>
 
             {/* Row 2: Payment Date & Reference ID */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+            <div className="voucher-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Payment Date</label>
                 <input
@@ -537,7 +537,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
             </div>
 
             {/* Row 3: Mode of Payment & Paid By */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+            <div className="voucher-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Mode of Payment</label>
                 <select
@@ -565,7 +565,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
             </div>
 
             {/* Row 4: Client Phone & Amount Paid */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+            <div className="voucher-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Client Contact Phone</label>
                 <input
@@ -596,7 +596,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
             </div>
 
             {/* Row 5: Amount in Words & Hotel Confirmation Details */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+            <div className="voucher-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Amount in Words</label>
                 <input
@@ -1145,6 +1145,79 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           }
           .services-checkbox-grid {
             grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 640px) {
+          .voucher-grid-3 {
+            grid-template-columns: 1fr !important;
+          }
+          .voucher-grid-2 {
+            grid-template-columns: 1fr !important;
+          }
+          .pricing-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .services-checkbox-grid {
+            grid-template-columns: 1fr;
+          }
+          .image-upload-control {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.6rem;
+          }
+          .form-nav-footer {
+            flex-direction: column;
+            gap: 0.5rem;
+          }
+          .form-nav-footer > div:last-child {
+            width: 100%;
+          }
+          .form-nav-footer .btn {
+            width: 100%;
+            justify-content: center;
+          }
+          .checkbox-card {
+            min-height: 44px;
+          }
+          .checkbox-input {
+            width: 20px;
+            height: 20px;
+            min-width: 20px;
+          }
+          .step-badge {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.75rem;
+          }
+          .form-step-title {
+            font-size: 1rem;
+          }
+          .form-section-title {
+            font-size: 1rem;
+          }
+          .pricing-section .pricing-grid {
+            gap: 0.85rem;
+          }
+          .pricing-section .pricing-grid > div {
+            padding: 0.85rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .form-scroll-content {
+            padding: 0.85rem;
+          }
+          .hotel-card {
+            padding: 0.85rem;
+          }
+          .day-editor-card {
+            padding: 0.85rem;
+          }
+          .form-nav-footer {
+            padding: 0.75rem;
+          }
+          .form-grid {
+            gap: 0.85rem;
           }
         }
       `}</style>
@@ -1814,9 +1887,9 @@ export const PackageForm: React.FC<PackageFormProps> = ({
               <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "1rem" }}>{getPaxCount()} {getPaxCount() === 1 ? "Person" : "People"}</span>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            <div className="pricing-section" style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
               {/* Row 1: Base Package Price */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
+              <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ fontWeight: "bold" }}>Base Land Package (Per Person - Rs.)</label>
                   <input
@@ -1840,7 +1913,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
               </div>
 
               {/* Row 2: Train Price (Optional) */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
+              <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Train Ticket Price (Per Person - Rs. - Optional)</label>
                   <input
@@ -1864,7 +1937,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
               </div>
 
               {/* Row 3: Flight Price (Optional) */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
+              <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", padding: "1rem", border: "1px solid var(--border-color)", borderRadius: "var(--radius-md)", backgroundColor: "var(--bg-secondary)" }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Flight Ticket Price (Per Person - Rs. - Optional)</label>
                   <input
@@ -1910,7 +1983,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   </span>
                 </div>
 
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
+                <div className="pricing-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label" style={{ fontWeight: "bold" }}>Advance Payment Received (Rs.)</label>
                     <input

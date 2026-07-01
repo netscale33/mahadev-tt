@@ -1403,7 +1403,7 @@ export default function TravelPortal() {
         .workspace-view-wrapper {
           display: flex;
           flex-direction: column;
-          height: calc(100vh - 62px); /* Header height sub */
+          height: calc(100dvh - 62px);
         }
 
         .workspace-header-bar {
@@ -1689,15 +1689,28 @@ export default function TravelPortal() {
           }
 
           .btn-text-desktop {
-            display: inline !important;
-          }
-
-          .btn-text-mobile {
             display: none !important;
           }
 
+          .btn-text-mobile {
+            display: inline !important;
+          }
+
           .workspace-view-wrapper {
-            height: calc(100vh - 170px) !important; /* Sub Header height dynamic height wrapper */
+            height: calc(100dvh - 180px) !important;
+          }
+
+          .workspace-header-bar {
+            flex-wrap: wrap !important;
+            padding: 0.5rem 0.75rem !important;
+            gap: 0.4rem !important;
+          }
+
+          .workspace-tabs {
+            order: 3 !important;
+            width: 100% !important;
+            justify-content: center !important;
+            margin: 0 !important;
           }
         }
         /* DESTINATIONS SIDEBAR */

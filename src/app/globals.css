@@ -187,6 +187,43 @@ p, span, label, select, input, textarea {
   margin-bottom: 1.75rem;
 }
 
+@media (max-width: 600px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-section-title {
+    font-size: 1rem;
+  }
+
+  .portal-header {
+    padding: 0.5rem 1rem;
+  }
+
+  .brand-name {
+    font-size: 1rem;
+  }
+
+  .brand-tagline {
+    display: none;
+  }
+
+  .user-badge {
+    padding: 0.3rem 0.6rem;
+  }
+
+  .user-name {
+    display: none;
+  }
+}
+
+/* iOS Safe Area Support */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .portal-header {
+    padding-top: calc(0.6rem + env(safe-area-inset-top));
+  }
+}
+
 .form-group {
   display: flex;
   flex-direction: column;

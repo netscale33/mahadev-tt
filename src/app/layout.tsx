@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
  },
   icons: {
-    apple: "/icons/icon-512.svg",
+    apple: "/logo.jpg",
   },
 };
 
@@ -37,8 +37,7 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Mahadev Holidays" />
-        <link rel="apple-touch-icon" href="/icons/icon-512.svg" sizes="512x512" />
-        <link rel="apple-touch-icon" href="/icons/icon-192.svg" sizes="192x192" />
+        <link rel="apple-touch-icon" href="/logo.jpg" />
         <link rel="apple-touch-startup-image" href="/logo.jpg" />
       </head>
       <body>{children}</body>
