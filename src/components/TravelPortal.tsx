@@ -544,11 +544,7 @@ export default function TravelPortal() {
       setPdfLibrary(mod);
     });
 
-    return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
-    };
-
-    // Check screen size
+    // Check screen size for responsive layout
     const checkScreenSize = () => {
       const mobile = window.innerWidth <= 1024;
       setIsMobile(mobile);
@@ -556,7 +552,11 @@ export default function TravelPortal() {
     };
     checkScreenSize();
     window.addEventListener("resize", checkScreenSize);
-    return () => window.removeEventListener("resize", checkScreenSize);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+      window.removeEventListener("resize", checkScreenSize);
+    };
   }, []);
 
   const formData = activeMode === "template"
@@ -1403,7 +1403,8 @@ export default function TravelPortal() {
         .workspace-view-wrapper {
           display: flex;
           flex-direction: column;
-          height: calc(100dvh - 62px);
+          flex: 1;
+          min-height: 0;
         }
 
         .workspace-header-bar {
@@ -1436,6 +1437,7 @@ export default function TravelPortal() {
           flex: 1;
           overflow: hidden;
           position: relative;
+          min-height: 0;
         }
 
         .workspace-panel-form {
@@ -1697,7 +1699,8 @@ export default function TravelPortal() {
           }
 
           .workspace-view-wrapper {
-            height: calc(100dvh - 180px) !important;
+            flex: 1;
+            min-height: 0;
           }
 
           .workspace-header-bar {
@@ -1719,6 +1722,7 @@ export default function TravelPortal() {
           flex: 1;
           overflow: hidden;
           position: relative;
+          min-height: 0;
         }
 
         .destinations-sidebar {

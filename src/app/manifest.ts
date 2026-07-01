@@ -9,7 +9,7 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     orientation: "any",
-    background_color: "#f8fafc",
+    background_color: "#0a2540",
     theme_color: "#0a2540",
     categories: ["travel", "business", "productivity"],
     lang: "en",
@@ -17,6 +17,18 @@ export default function manifest(): MetadataRoute.Manifest {
     scope: "/",
     prefer_related_applications: false,
     icons: [
+      {
+        src: "/logo.jpg",
+        sizes: "192x192",
+        type: "image/jpeg",
+        purpose: "any",
+      },
+      {
+        src: "/logo.jpg",
+        sizes: "512x512",
+        type: "image/jpeg",
+        purpose: "any",
+      },
       {
         src: "/logo.jpg",
         sizes: "1024x1024",
