@@ -966,10 +966,18 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
               </Text>
             </View>
             <View style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginBottom: 3 }}>
-              <Text style={{ fontSize: 8.5, color: "#cbd5e1", letterSpacing: 1, fontWeight: "bold" }}>TOUR CODE</Text>
-              <Text style={{ fontSize: 14, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent, marginTop: 2 }}>
-                {(data.tourCode || "0000001")} / Q-{(data.version || 1)}
-              </Text>
+              <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Text style={{ fontSize: 8, color: "#cbd5e1", letterSpacing: 0.8, fontWeight: "bold" }}>TOUR CODE:</Text>
+                <Text style={{ fontSize: 11, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent }}>
+                  {(data.tourCode || "0000001")}
+                </Text>
+              </View>
+              <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+                <Text style={{ fontSize: 8, color: "#cbd5e1", letterSpacing: 0.8, fontWeight: "bold" }}>QUOTATION:</Text>
+                <Text style={{ fontSize: 11, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent }}>
+                  {(data.version || 1)}
+                </Text>
+              </View>
             </View>
           </View>
         </View>
@@ -1654,6 +1662,17 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
 // NEW: VOUCHER & PAYMENT RECEIPT PDF COMPONENT
 // ==========================================
 
+const getReceiptNo = (receiptNo?: string, tourCode?: string) => {
+  if (receiptNo && receiptNo.trim() !== "") {
+    return receiptNo;
+  }
+  const code = tourCode || "0000001";
+  const seed = code.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const mixed = (seed * 9301 + 49297) % 233280;
+  const randSuffix = 1000 + (mixed % 9000);
+  return `55${randSuffix}`;
+};
+
 export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
   const formattedArrival = formatPDFDate(data.arrivalDate);
   
@@ -1710,7 +1729,7 @@ export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data 
           <View style={voucherStyles.tableRow}>
             <Text style={[voucherStyles.tableCellLabel, { width: "35%" }]}>Receipt No</Text>
             <Text style={[voucherStyles.tableCellValue, { width: "65%", fontWeight: "bold", color: "#1e3a8a" }]}>
-              {data.receiptNo || `RCP-${data.tourCode || "0000001"}`}
+              {getReceiptNo(data.receiptNo, data.tourCode)}
             </Text>
           </View>
           <View style={voucherStyles.tableRowEven}>

@@ -169,6 +169,17 @@ const getDayItineraryTransferText = (dayItem: ItineraryDay | null | undefined, d
   return `Cab: ${data.vehicleType} (${basis})`;
 };
 
+const getReceiptNo = (receiptNo?: string, tourCode?: string) => {
+  if (receiptNo && receiptNo.trim() !== "") {
+    return receiptNo;
+  }
+  const code = tourCode || "0000001";
+  const seed = code.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const mixed = (seed * 9301 + 49297) % 233280;
+  const randSuffix = 1000 + (mixed % 9000);
+  return `55${randSuffix}`;
+};
+
 export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher" }> = ({ data, type = "quotation" }) => {
   const formattedArrival = formatPreviewDate(data.arrivalDate);
   const totalPages = 6 + (data.itinerary || []).length;
@@ -248,7 +259,7 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
               <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                 <td style={{ width: "35%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Receipt No</td>
                 <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#1e3a8a" }}>
-                  {data.receiptNo || `RCP-${data.tourCode || "0000001"}`}
+                  {getReceiptNo(data.receiptNo, data.tourCode)}
                 </td>
               </tr>
               <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
@@ -1451,10 +1462,18 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
               <span style={{ fontSize: "0.75rem", color: "#c5a059", fontWeight: "bold", letterSpacing: "0.5px" }}>{(data.durationNights ?? 0)} Nights {(data.durationDays ?? 0)} Days - Custom Tour Package</span>
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginBottom: "3px" }}>
-              <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "1px", fontWeight: "bold" }}>TOUR CODE</span>
-              <span style={{ fontSize: "1.3rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059", marginTop: "2px" }}>
-                {data.tourCode || "0000001"}
-              </span>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
+                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>TOUR CODE:</span>
+                <span style={{ fontSize: "0.8rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059" }}>
+                  {data.tourCode || "0000001"}
+                </span>
+              </div>
+              <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px", marginTop: "2px" }}>
+                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION:</span>
+                <span style={{ fontSize: "0.8rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059" }}>
+                  {data.version || 1}
+                </span>
+              </div>
             </div>
           </div>
         </div>

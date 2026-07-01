@@ -100,6 +100,17 @@ const convertToBase64 = (file: File): Promise<string> => {
   });
 };
 
+const getReceiptNo = (receiptNo?: string, tourCode?: string) => {
+  if (receiptNo && receiptNo.trim() !== "") {
+    return receiptNo;
+  }
+  const code = tourCode || "0000001";
+  const seed = code.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const mixed = (seed * 9301 + 49297) % 233280;
+  const randSuffix = 1000 + (mixed % 9000);
+  return `55${randSuffix}`;
+};
+
 export const PackageForm: React.FC<PackageFormProps> = ({
   data,
   onChange,
@@ -127,6 +138,15 @@ export const PackageForm: React.FC<PackageFormProps> = ({
       el.removeEventListener("wheel", handleWheel);
     };
   }, []);
+
+  useEffect(() => {
+    if (mode === "voucher" && (!data.receiptNo || data.receiptNo.trim() === "")) {
+      onChange({
+        ...data,
+        receiptNo: getReceiptNo(undefined, data.tourCode),
+      });
+    }
+  }, [mode, data.tourCode, data.receiptNo]);
   const handleInputChange = (
     field: keyof PDFData,
     value: string | number | boolean
