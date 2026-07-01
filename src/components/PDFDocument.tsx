@@ -809,6 +809,7 @@ interface PDFData {
   hotels: HotelItem[];
   hotelLibrary?: HotelItem[];
   tourCode?: string;
+  quotationNo?: string;
   receiptNo?: string;
   paymentDate?: string;
   paymentRefId?: string;
@@ -969,13 +970,13 @@ export const PDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data }) => {
               <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <Text style={{ fontSize: 8, color: "#cbd5e1", letterSpacing: 0.8, fontWeight: "bold" }}>TOUR CODE:</Text>
                 <Text style={{ fontSize: 11, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent }}>
-                  {(data.tourCode || "1011")}
+                  {(data.tourCode || "0000001")}
                 </Text>
               </View>
               <View style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
                 <Text style={{ fontSize: 8, color: "#cbd5e1", letterSpacing: 0.8, fontWeight: "bold" }}>QUOTATION NO.:</Text>
                 <Text style={{ fontSize: 11, fontFamily: "Montserrat", fontWeight: "bold", color: colors.accent }}>
-                  {(data.version || 1)}
+                  {(data.quotationNo || "1011")}
                 </Text>
               </View>
             </View>
@@ -1809,13 +1810,13 @@ export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data 
           <View style={voucherStyles.tableRow}>
             <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Tour Code</Text>
             <Text style={[voucherStyles.tableCellValue, { width: "70%", fontWeight: "bold", color: "#1e3a8a" }]}>
-              {data.tourCode || "1011"}
+              {data.tourCode || "0000001"}
             </Text>
           </View>
           <View style={voucherStyles.tableRowEven}>
             <Text style={[voucherStyles.tableCellLabel, { width: "30%" }]}>Quotation No.</Text>
             <Text style={[voucherStyles.tableCellValue, { width: "70%", fontWeight: "bold", color: "#b45309" }]}>
-              Quotation {data.version || 1}
+              {data.quotationNo || "1011"}
             </Text>
           </View>
           <View style={voucherStyles.tableRow}>
@@ -1890,7 +1891,7 @@ export const VoucherPDFDocumentComponent: React.FC<{ data: PDFData }> = ({ data 
         </View>
 
         <Text style={{ fontSize: 10, fontFamily: "Montserrat", fontWeight: "bold", textAlign: "center", color: "#0a2540", marginBottom: 12 }}>
-          Tour Code: {data.tourCode || "1011"} (Quotation No. {data.version || 1})   |   Travel Dates: {formattedArrival} to {formattedDeparture}
+          Tour Code: {data.tourCode || "0000001"} (Quotation No.: {data.quotationNo || "1011"})   |   Travel Dates: {formattedArrival} to {formattedDeparture}
         </Text>
 
         {/* Guest details section */}

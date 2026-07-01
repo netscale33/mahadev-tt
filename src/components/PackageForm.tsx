@@ -70,6 +70,7 @@ export interface PDFData {
   id?: string;
   isDefault?: boolean;
   tourCode?: string;
+  quotationNo?: string;
   receiptNo?: string;
   paymentDate?: string;
   paymentRefId?: string;
@@ -478,15 +479,25 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           </div>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            {/* Row 1: Tour Code & Receipt No */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+            {/* Row 1: Tour Code, Quotation No. & Receipt No */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: "bold" }}>Quotation No.</label>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Tour Code</label>
                 <input
                   type="text"
                   className="form-input"
                   value={data.tourCode || ""}
                   onChange={(e) => handleInputChange("tourCode", e.target.value)}
+                  placeholder="E.g. 0000001"
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Quotation No.</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.quotationNo || ""}
+                  onChange={(e) => handleInputChange("quotationNo", e.target.value)}
                   placeholder="E.g. 1011"
                 />
               </div>
@@ -497,7 +508,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   className="form-input"
                   value={data.receiptNo || ""}
                   onChange={(e) => handleInputChange("receiptNo", e.target.value)}
-                  placeholder={`E.g. RCP-${data.tourCode || "1011"}`}
+                  placeholder={`E.g. RCP-${data.tourCode || "0000001"}`}
                 />
               </div>
             </div>
@@ -1168,7 +1179,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
         {activeStep === 0 && (
           <div className="form-step-pane">
             <div className="form-grid">
-              <div className="form-group">
+              <div className="form-group full-width">
                 <label className="form-label">Client / Guest Name</label>
                 <input
                   type="text"
@@ -1180,12 +1191,23 @@ export const PackageForm: React.FC<PackageFormProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Quotation No.</label>
+                <label className="form-label">Tour Code</label>
                 <input
                   type="text"
                   className="form-input"
                   value={data.tourCode || ""}
                   onChange={(e) => handleInputChange("tourCode", e.target.value)}
+                  placeholder="E.g. 0000001"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Quotation No.</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.quotationNo || ""}
+                  onChange={(e) => handleInputChange("quotationNo", e.target.value)}
                   placeholder="E.g. 1011"
                 />
               </div>

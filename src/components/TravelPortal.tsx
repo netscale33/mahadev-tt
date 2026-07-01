@@ -153,10 +153,15 @@ const generateDefaultDestination = (name: string, id: string): PDFData => {
   const dest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
   dest.id = id;
   if (typeof window !== "undefined") {
-    let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1011");
-    if (isNaN(counter) || counter < 1011) counter = 1011;
-    dest.tourCode = counter.toString();
-    localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
+    let tcCounter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
+    if (isNaN(tcCounter) || tcCounter <= 0) tcCounter = 1;
+    dest.tourCode = tcCounter.toString().padStart(7, "0");
+    localStorage.setItem("mahadev_tour_code_counter", (tcCounter + 1).toString());
+
+    let qnCounter = parseInt(localStorage.getItem("mahadev_quotation_no_counter") || "1011");
+    if (isNaN(qnCounter) || qnCounter < 1011) qnCounter = 1011;
+    dest.quotationNo = qnCounter.toString();
+    localStorage.setItem("mahadev_quotation_no_counter", (qnCounter + 1).toString());
   }
   dest.destination = name;
   dest.guestName = "Name of Client";
@@ -273,10 +278,16 @@ export default function TravelPortal() {
         if (saved && saved.length > 0) {
           const migrated = saved.map((dest: any) => {
             if (!dest.tourCode) {
-              let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1011");
-              if (isNaN(counter) || counter < 1011) counter = 1011;
-              dest.tourCode = counter.toString();
-              localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
+              let tcCounter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
+              if (isNaN(tcCounter) || tcCounter <= 0) tcCounter = 1;
+              dest.tourCode = tcCounter.toString().padStart(7, "0");
+              localStorage.setItem("mahadev_tour_code_counter", (tcCounter + 1).toString());
+            }
+            if (!dest.quotationNo) {
+              let qnCounter = parseInt(localStorage.getItem("mahadev_quotation_no_counter") || "1011");
+              if (isNaN(qnCounter) || qnCounter < 1011) qnCounter = 1011;
+              dest.quotationNo = qnCounter.toString();
+              localStorage.setItem("mahadev_quotation_no_counter", (qnCounter + 1).toString());
             }
             if (dest.version === undefined) {
               dest.version = 1;
@@ -526,10 +537,15 @@ export default function TravelPortal() {
     const newDest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
     newDest.id = `dest-${Date.now()}`;
     if (typeof window !== "undefined") {
-      let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1011");
-      if (isNaN(counter) || counter < 1011) counter = 1011;
-      newDest.tourCode = counter.toString();
-      localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
+      let tcCounter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
+      if (isNaN(tcCounter) || tcCounter <= 0) tcCounter = 1;
+      newDest.tourCode = tcCounter.toString().padStart(7, "0");
+      localStorage.setItem("mahadev_tour_code_counter", (tcCounter + 1).toString());
+
+      let qnCounter = parseInt(localStorage.getItem("mahadev_quotation_no_counter") || "1011");
+      if (isNaN(qnCounter) || qnCounter < 1011) qnCounter = 1011;
+      newDest.quotationNo = qnCounter.toString();
+      localStorage.setItem("mahadev_quotation_no_counter", (qnCounter + 1).toString());
     }
     newDest.destination = newDestName.trim();
     newDest.guestName = "Name of Client";

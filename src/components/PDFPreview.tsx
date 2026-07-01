@@ -69,6 +69,7 @@ interface PDFData {
   hotels: HotelItem[];
   hotelLibrary?: HotelItem[];
   tourCode?: string;
+  quotationNo?: string;
   receiptNo?: string;
   paymentDate?: string;
   paymentRefId?: string;
@@ -351,13 +352,13 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
               <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
                 <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Tour Code</td>
                 <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#1e3a8a" }}>
-                  {data.tourCode || "1011"}
+                  {data.tourCode || "0000001"}
                 </td>
               </tr>
               <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
                 <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Quotation No.</td>
                 <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#b45309" }}>
-                  Quotation {data.version || 1}
+                  {data.quotationNo || "1011"}
                 </td>
               </tr>
               <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
@@ -446,7 +447,7 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
           </div>
 
           <p style={{ fontSize: "0.78rem", fontWeight: "bold", textAlign: "center", color: "#1e3a8a", marginBottom: "15px" }}>
-            Tour Code: {data.tourCode || "1011"} (Quotation No. {data.version || 1}) | Travel Dates: {formattedArrival} to {(() => {
+            Tour Code: {data.tourCode || "0000001"} (Quotation No.: {data.quotationNo || "1011"}) | Travel Dates: {formattedArrival} to {(() => {
               const dep = new Date(data.arrivalDate);
               dep.setDate(dep.getDate() + (data.durationNights || 3));
               return formatPreviewDate(dep.toISOString().split("T")[0]);
@@ -1463,15 +1464,15 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginBottom: "3px" }}>
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
-                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION NO.:</span>
+                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>TOUR CODE:</span>
                 <span style={{ fontSize: "0.8rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059" }}>
-                  {data.tourCode || "1011"}
+                  {data.tourCode || "0000001"}
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px", marginTop: "2px" }}>
-                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION VERSION:</span>
+                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION NO.:</span>
                 <span style={{ fontSize: "0.8rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059" }}>
-                  {data.version || 1}
+                  {data.quotationNo || "1011"}
                 </span>
               </div>
             </div>
