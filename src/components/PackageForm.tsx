@@ -458,24 +458,32 @@ export const PackageForm: React.FC<PackageFormProps> = ({
           </div>
           
           <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-            {/* Passenger Count Indicator */}
-            <div style={{ backgroundColor: "rgba(197, 160, 89, 0.08)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border-color)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <span className="form-label" style={{ margin: 0, fontWeight: "bold" }}>Linked Tour / Booking Code:</span>
-              <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "1rem" }}>{data.tourCode || "0000001"}</span>
-            </div>
-
-            {/* Row 1: Receipt No & Payment Date */}
+            {/* Row 1: Tour Code & Receipt No */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Tour / Booking Code</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.tourCode || ""}
+                  onChange={(e) => handleInputChange("tourCode", e.target.value)}
+                  placeholder="E.g. 0000001"
+                />
+              </div>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Receipt Number</label>
                 <input
                   type="text"
                   className="form-input"
-                  value={data.receiptNo || `RCP-${data.tourCode || "0000001"}`}
+                  value={data.receiptNo || ""}
                   onChange={(e) => handleInputChange("receiptNo", e.target.value)}
-                  placeholder="E.g. RCP-000473"
+                  placeholder={`E.g. RCP-${data.tourCode || "0000001"}`}
                 />
               </div>
+            </div>
+
+            {/* Row 2: Payment Date & Reference ID */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Payment Date</label>
                 <input
@@ -485,10 +493,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   onChange={(e) => handleInputChange("paymentDate", e.target.value)}
                 />
               </div>
-            </div>
-
-            {/* Row 2: Reference ID & Mode of Payment */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Reference ID / Transaction ID</label>
                 <input
@@ -499,6 +503,10 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   placeholder="E.g. UPI Ref Number or -"
                 />
               </div>
+            </div>
+
+            {/* Row 3: Mode of Payment & Paid By */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Mode of Payment</label>
                 <select
@@ -513,10 +521,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   <option value="CHEQUE">CHEQUE</option>
                 </select>
               </div>
-            </div>
-
-            {/* Row 3: Paid By & Client Phone */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Paid By (Client Name)</label>
                 <input
@@ -527,6 +531,10 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   placeholder="Client Name"
                 />
               </div>
+            </div>
+
+            {/* Row 4: Client Phone & Amount Paid */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Client Contact Phone</label>
                 <input
@@ -537,10 +545,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   placeholder="E.g. 9664545613"
                 />
               </div>
-            </div>
-
-            {/* Row 4: Amount Paid & Amount in Words */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Amount Paid (Rs.)</label>
                 <input
@@ -558,6 +562,10 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   placeholder="E.g. 12000"
                 />
               </div>
+            </div>
+
+            {/* Row 5: Amount in Words & Hotel Confirmation Details */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Amount in Words</label>
                 <input
@@ -568,10 +576,6 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   placeholder="INR: Twelve Thousand Rupees Only"
                 />
               </div>
-            </div>
-
-            {/* Row 5: Hotel Confirmation Details */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label" style={{ fontWeight: "bold" }}>Hotel Confirmation Number (Conf No)</label>
                 <input
@@ -1144,7 +1148,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
         {activeStep === 0 && (
           <div className="form-step-pane">
             <div className="form-grid">
-              <div className="form-group full-width">
+              <div className="form-group">
                 <label className="form-label">Client / Guest Name</label>
                 <input
                   type="text"
@@ -1152,6 +1156,17 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   value={data.guestName || ""}
                   onChange={(e) => handleInputChange("guestName", e.target.value)}
                   placeholder="E.g. Mahadev Tour & Travels ( Vishal )"
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Tour / Booking Code</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  value={data.tourCode || ""}
+                  onChange={(e) => handleInputChange("tourCode", e.target.value)}
+                  placeholder="E.g. 0000001"
                 />
               </div>
 
