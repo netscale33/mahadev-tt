@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { PackageForm, PDFData, HotelItem } from "./PackageForm";
 import { PDFPreview } from "./PDFPreview";
-import { Download, Edit3, Eye, Menu, Plus, Trash2, X } from "lucide-react";
+import { Download, Edit3, Eye, Menu, Plus, Trash2, X, Smartphone } from "lucide-react";
 import { loadDestinations, saveDestinations, saveTrackingHistory, loadTrackingHistory } from "./db";
 import { getPrepopulatedHotels } from "./hotelLookup";
 
@@ -249,6 +249,12 @@ export default function TravelPortal() {
   const [isMounted, setIsMounted] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [pdfLibrary, setPdfLibrary] = useState<any>(null);
+
+  // PWA Install state
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [dismissedIOSBanner, setDismissedIOSBanner] = useState(false);
 
   // Sidebar and Modals state
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -513,9 +519,34 @@ export default function TravelPortal() {
     }
     initData();
 
+    // Register service worker for PWA
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js", {
+        scope: "/",
+        updateViaCache: "none",
+      }).catch((err) => console.error("SW registration failed:", err));
+    }
+
+    // PWA install prompt handler
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener("beforeinstallprompt", handleBeforeInstall);
+
+    // Detect iOS and standalone mode
+    setIsIOS(
+      /iPad|iPhone|iPod/.test(navigator.userAgent) && !((window as any).MSStream)
+    );
+    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
+
     import("@react-pdf/renderer").then((mod) => {
       setPdfLibrary(mod);
     });
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", handleBeforeInstall);
+    };
 
     // Check screen size
     const checkScreenSize = () => {
@@ -948,6 +979,49 @@ export default function TravelPortal() {
           </div>
         </div>
       </header>
+
+      {/* PWA Install Prompt Banner */}
+      {!isStandalone && installPrompt && (
+        <div className="pwa-install-banner">
+          <div className="pwa-install-content">
+            <Smartphone size={18} />
+            <span>Install <strong>Mahadev Holidays</strong> for app-like experience</span>
+          </div>
+          <div className="pwa-install-actions">
+            <button
+              className="pwa-install-btn"
+              onClick={async () => {
+                installPrompt.prompt();
+                const result = await installPrompt.userChoice;
+                if (result.outcome === "accepted") {
+                  setInstallPrompt(null);
+                }
+              }}
+            >
+              Install
+            </button>
+            <button
+              className="pwa-dismiss-btn"
+              onClick={() => setInstallPrompt(null)}
+            >
+              <X size={14} />
+            </button>
+          </div>
+        </div>
+      )}
+      {!isStandalone && isIOS && !dismissedIOSBanner && (
+        <div className="pwa-install-banner ios">
+          <div className="pwa-install-content">
+            <Smartphone size={18} />
+            <span>
+              Install on iOS: Tap Share <span style={{ fontSize: "1.1rem" }}>⎋</span> then "Add to Home Screen" <span style={{ fontSize: "1.1rem" }}>➕</span>
+            </span>
+          </div>
+          <button className="pwa-dismiss-btn" onClick={() => setDismissedIOSBanner(true)}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Main Workspace */}
       <main style={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -1843,6 +1917,78 @@ export default function TravelPortal() {
           .destinations-sidebar.open {
             transform: translateX(0);
           }
+        }
+
+        /* PWA INSTALL BANNER */
+        .pwa-install-banner {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0.5rem 1.5rem;
+          background: linear-gradient(135deg, #0a2540 0%, #1e3a8a 100%);
+          color: #ffffff;
+          font-size: 0.85rem;
+          gap: 1rem;
+          flex-wrap: wrap;
+          border-bottom: 2px solid var(--accent);
+        }
+
+        .pwa-install-banner.ios {
+          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        }
+
+        .pwa-install-content {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          color: #f1f5f9;
+        }
+
+        .pwa-install-content svg {
+          color: var(--accent);
+          flex-shrink: 0;
+        }
+
+        .pwa-install-actions {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .pwa-install-btn {
+          padding: 0.35rem 1rem;
+          background-color: var(--accent);
+          color: var(--primary-dark);
+          border: none;
+          border-radius: var(--radius-sm);
+          font-weight: 700;
+          font-size: 0.8rem;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+
+        .pwa-install-btn:hover {
+          background-color: var(--accent-hover);
+          transform: translateY(-1px);
+        }
+
+        .pwa-dismiss-btn {
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          color: #cbd5e1;
+          border-radius: 50%;
+          width: 26px;
+          height: 26px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+
+        .pwa-dismiss-btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          color: #ffffff;
         }
       `}</style>
     </div>
