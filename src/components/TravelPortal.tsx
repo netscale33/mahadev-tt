@@ -153,9 +153,9 @@ const generateDefaultDestination = (name: string, id: string): PDFData => {
   const dest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
   dest.id = id;
   if (typeof window !== "undefined") {
-    let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
-    if (isNaN(counter) || counter <= 0) counter = 1;
-    dest.tourCode = counter.toString().padStart(7, "0");
+    let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1011");
+    if (isNaN(counter) || counter < 1011) counter = 1011;
+    dest.tourCode = counter.toString();
     localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
   }
   dest.destination = name;
@@ -273,9 +273,9 @@ export default function TravelPortal() {
         if (saved && saved.length > 0) {
           const migrated = saved.map((dest: any) => {
             if (!dest.tourCode) {
-              let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
-              if (isNaN(counter) || counter <= 0) counter = 1;
-              dest.tourCode = counter.toString().padStart(7, "0");
+              let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1011");
+              if (isNaN(counter) || counter < 1011) counter = 1011;
+              dest.tourCode = counter.toString();
               localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
             }
             if (dest.version === undefined) {
@@ -526,9 +526,9 @@ export default function TravelPortal() {
     const newDest: PDFData = JSON.parse(JSON.stringify(defaultGoaData));
     newDest.id = `dest-${Date.now()}`;
     if (typeof window !== "undefined") {
-      let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1");
-      if (isNaN(counter) || counter <= 0) counter = 1;
-      newDest.tourCode = counter.toString().padStart(7, "0");
+      let counter = parseInt(localStorage.getItem("mahadev_tour_code_counter") || "1011");
+      if (isNaN(counter) || counter < 1011) counter = 1011;
+      newDest.tourCode = counter.toString();
       localStorage.setItem("mahadev_tour_code_counter", (counter + 1).toString());
     }
     newDest.destination = newDestName.trim();

@@ -173,7 +173,7 @@ const getReceiptNo = (receiptNo?: string, tourCode?: string) => {
   if (receiptNo && receiptNo.trim() !== "") {
     return receiptNo;
   }
-  const code = tourCode || "0000001";
+  const code = tourCode || "1011";
   const seed = code.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const mixed = (seed * 9301 + 49297) % 233280;
   const randSuffix = 1000 + (mixed % 9000);
@@ -349,13 +349,13 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
           <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #cbd5e1", marginBottom: "15px" }}>
             <tbody>
               <tr style={{ borderBottom: "1px solid #e2e8f0" }}>
-                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Booking Code</td>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", backgroundColor: "#f8fafc", borderRight: "1px solid #cbd5e1" }}>Tour Code</td>
                 <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#1e3a8a" }}>
-                  {data.tourCode || "0000001"}
+                  {data.tourCode || "1011"}
                 </td>
               </tr>
               <tr style={{ borderBottom: "1px solid #e2e8f0", backgroundColor: "#f8fafc" }}>
-                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Quotation Revision</td>
+                <td style={{ width: "30%", padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#334155", borderRight: "1px solid #cbd5e1" }}>Quotation No.</td>
                 <td style={{ padding: "8px", fontSize: "0.78rem", fontWeight: "bold", color: "#b45309" }}>
                   Quotation {data.version || 1}
                 </td>
@@ -446,7 +446,7 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
           </div>
 
           <p style={{ fontSize: "0.78rem", fontWeight: "bold", textAlign: "center", color: "#1e3a8a", marginBottom: "15px" }}>
-            Booking Code: {data.tourCode || "0000001"} (Quotation {data.version || 1}) | Travel Dates: {formattedArrival} to {(() => {
+            Tour Code: {data.tourCode || "1011"} (Quotation No. {data.version || 1}) | Travel Dates: {formattedArrival} to {(() => {
               const dep = new Date(data.arrivalDate);
               dep.setDate(dep.getDate() + (data.durationNights || 3));
               return formatPreviewDate(dep.toISOString().split("T")[0]);
@@ -1463,13 +1463,13 @@ export const PDFPreview: React.FC<{ data: PDFData; type?: "quotation" | "voucher
             </div>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", marginBottom: "3px" }}>
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px" }}>
-                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>TOUR CODE:</span>
+                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION NO.:</span>
                 <span style={{ fontSize: "0.8rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059" }}>
-                  {data.tourCode || "0000001"}
+                  {data.tourCode || "1011"}
                 </span>
               </div>
               <div style={{ display: "flex", flexDirection: "row", alignItems: "center", gap: "4px", marginTop: "2px" }}>
-                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION:</span>
+                <span style={{ fontSize: "0.6rem", color: "#cbd5e1", letterSpacing: "0.8px", fontWeight: "bold" }}>QUOTATION VERSION:</span>
                 <span style={{ fontSize: "0.8rem", fontFamily: "'Montserrat', sans-serif", fontWeight: "bold", color: "#c5a059" }}>
                   {data.version || 1}
                 </span>

@@ -104,7 +104,7 @@ const getReceiptNo = (receiptNo?: string, tourCode?: string) => {
   if (receiptNo && receiptNo.trim() !== "") {
     return receiptNo;
   }
-  const code = tourCode || "0000001";
+  const code = tourCode || "1011";
   const seed = code.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
   const mixed = (seed * 9301 + 49297) % 233280;
   const randSuffix = 1000 + (mixed % 9000);
@@ -481,13 +481,13 @@ export const PackageForm: React.FC<PackageFormProps> = ({
             {/* Row 1: Tour Code & Receipt No */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label" style={{ fontWeight: "bold" }}>Tour / Booking Code</label>
+                <label className="form-label" style={{ fontWeight: "bold" }}>Quotation No.</label>
                 <input
                   type="text"
                   className="form-input"
                   value={data.tourCode || ""}
                   onChange={(e) => handleInputChange("tourCode", e.target.value)}
-                  placeholder="E.g. 0000001"
+                  placeholder="E.g. 1011"
                 />
               </div>
               <div className="form-group" style={{ margin: 0 }}>
@@ -497,7 +497,7 @@ export const PackageForm: React.FC<PackageFormProps> = ({
                   className="form-input"
                   value={data.receiptNo || ""}
                   onChange={(e) => handleInputChange("receiptNo", e.target.value)}
-                  placeholder={`E.g. RCP-${data.tourCode || "0000001"}`}
+                  placeholder={`E.g. RCP-${data.tourCode || "1011"}`}
                 />
               </div>
             </div>
@@ -1180,13 +1180,13 @@ export const PackageForm: React.FC<PackageFormProps> = ({
               </div>
 
               <div className="form-group">
-                <label className="form-label">Tour / Booking Code</label>
+                <label className="form-label">Quotation No.</label>
                 <input
                   type="text"
                   className="form-input"
                   value={data.tourCode || ""}
                   onChange={(e) => handleInputChange("tourCode", e.target.value)}
-                  placeholder="E.g. 0000001"
+                  placeholder="E.g. 1011"
                 />
               </div>
 
